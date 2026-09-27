@@ -14,7 +14,7 @@ const ANIM_S = 5.2;
 export function Evolution() {
   const mode = useGame((s) => s.mode);
   if (mode !== "evolve") return null;
-  return <EvolutionInner />;
+  return <EvolutionInner key={currentEvo()?.mon.uid} />;
 }
 
 function EvolutionInner() {

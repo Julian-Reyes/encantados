@@ -105,6 +105,7 @@ export async function runBattle(setup: BattleSetup, ui: BattleUI): Promise<Battl
   let enemyIdx = 0;
   const E: Fighter = { mon: setup.enemy[0], stages: fresh(), flinch: false };
   let pIdx = party.findIndex((m) => m.hp > 0);
+  if (pIdx < 0) return { outcome: "lose", evolve: [] };
   const P: Fighter = { mon: party[pIdx], stages: fresh(), flinch: false };
   let participants = new Set<string>([P.mon.uid]);
   let runAttempts = 0;
@@ -131,8 +132,10 @@ export async function runBattle(setup: BattleSetup, ui: BattleUI): Promise<Battl
     P.flinch = false;
     participants.add(mon.uid);
     ui.setActive("player", mon);
-    void msg({ en: "Go! {n}!", pt: "Vai, {n}!" }, { n: displayName(mon) });
-    await ui.anim("send", "player");
+    await Promise.all([
+      msg({ en: "Go! {n}!", pt: "Vai, {n}!" }, { n: displayName(mon) }),
+      ui.anim("send", "player"),
+    ]);
   }
 
   // ---------- Moves ----------

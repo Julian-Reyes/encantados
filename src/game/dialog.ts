@@ -8,11 +8,13 @@ let nextId = 1;
 
 function open(d: { text: string; choices?: string[]; input?: { value: string; max: number }; auto?: number }) {
   return new Promise<number | string>((resolve) => {
+    const id = nextId++;
     G().set({
       dialog: {
-        id: nextId++,
+        id,
         ...d,
         resolve: (v) => {
+          if (G().dialog?.id !== id) return;
           G().set({ dialog: null });
           resolve(v);
         },

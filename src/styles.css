@@ -1,3 +1,7 @@
+@font-face { font-family:"Pixelify Sans"; font-style:normal; font-weight:400; font-display:swap; src:url("./assets/fonts/pixelify-400.ttf") format("truetype"); }
+@font-face { font-family:"Pixelify Sans"; font-style:normal; font-weight:600; font-display:swap; src:url("./assets/fonts/pixelify-600.ttf") format("truetype"); }
+@font-face { font-family:"Pixelify Sans"; font-style:normal; font-weight:700; font-display:swap; src:url("./assets/fonts/pixelify-700.ttf") format("truetype"); }
+@font-face { font-family:"Press Start 2P"; font-style:normal; font-weight:400; font-display:swap; src:url("./assets/fonts/press-start-2p.ttf") format("truetype"); }
 :root { --ink:#1e2433; --panel:#fbfaf5; --edge:#3a4a6a; --sel:#e8453a; --font:"Pixelify Sans",ui-monospace,monospace; }
 * { box-sizing:border-box; }
 html,body,#root { margin:0; height:100%; overflow:hidden; background:#1c2a44; color:var(--ink); font-family:var(--font); -webkit-user-select:none; user-select:none; touch-action:none; }
@@ -10,6 +14,7 @@ html,body,#root { margin:0; height:100%; overflow:hidden; background:#1c2a44; co
 .grow { flex:1; }
 small,.dim { opacity:.75; }
 /* dialog */
+.dialog-shield { position:absolute; inset:0; z-index:39; }
 .dialog-wrap { position:absolute; left:50%; bottom:12px; transform:translateX(-50%); width:min(760px,calc(100% - 24px)); z-index:40; }
 .has-touch .dialog-wrap { bottom:170px; }
 .dialog { min-height:92px; padding:14px 18px; font-size:21px; line-height:1.35; white-space:pre-line; position:relative; }
@@ -17,6 +22,7 @@ small,.dim { opacity:.75; }
 .choices { position:absolute; right:0; bottom:calc(100% + 6px); min-width:150px; padding:6px 10px; }
 .name-entry { display:flex; gap:8px; margin-top:8px; }
 .name-entry input { font-family:var(--font); font-size:20px; flex:1; padding:4px 8px; border:3px solid var(--edge); border-radius:6px; }
+.name-entry input { min-width:0; width:100%; }
 @keyframes bob { to { transform:translateY(3px); } }
 /* battle */
 .battle-ui { position:absolute; inset:0; z-index:30; pointer-events:none; }
@@ -119,3 +125,25 @@ small,.dim { opacity:.75; }
 .startsel { position:absolute; left:50%; bottom:12px; transform:translateX(-50%); }
 .pad-btn.start { position:static; width:auto; height:30px; font-size:12px; padding:0 12px; border-radius:15px; }
 @media (max-width:700px) { .dex { flex-direction:column; } .dex-list { width:100%; max-height:40vh; } .dialog { font-size:18px; } .opt,.row { font-size:16px; } .infobox { font-size:15px; } }
+.has-touch .screen-backdrop { padding-bottom:170px; }
+@media (max-width:700px) {
+  .action-grid { min-width:170px; }
+  .move-grid { min-width:0; padding:8px 4px; }
+  .move-grid .opt { min-width:0; overflow-wrap:anywhere; }
+  .move-info { width:112px; flex:none; font-size:14px; }
+  .battle-prompt { min-width:0; padding:10px; font-size:17px; }
+  .info-top { flex-wrap:wrap; }
+  .pc-cols { grid-template-columns:1fr; }
+  .team-card { gap:6px; padding:6px; font-size:16px; }
+  .team-hp { width:100px; flex:none; }
+  .option-row { flex-wrap:wrap; }
+}
+@media (max-height:500px) and (orientation:landscape) {
+  .has-touch .touchpad { height:100px; }
+  .has-touch .dpad { transform:scale(.65); transform-origin:bottom left; bottom:6px; }
+  .has-touch .ab { transform:scale(.75); transform-origin:bottom right; bottom:6px; }
+  .has-touch .dialog-wrap,.has-touch .battle-bar,.has-touch .battle-list { bottom:106px; }
+  .has-touch .screen-backdrop { padding-bottom:106px; }
+  .has-touch .infobox.player { bottom:210px; }
+  .dialog { padding:8px 12px; min-height:70px; font-size:16px; }
+}

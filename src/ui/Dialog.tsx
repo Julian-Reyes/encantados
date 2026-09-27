@@ -25,7 +25,8 @@ export function Dialog() {
     let raf = 0;
     const step = () => {
       const n = Math.floor(((performance.now() - start) / 1000) * CPS);
-      setShown(Math.min(n, d.text.length));
+      // Confirm reveals the whole line; an outstanding frame must not hide it again.
+      setShown((previous) => Math.max(previous, Math.min(n, d.text.length)));
       if (n < d.text.length) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -83,6 +84,8 @@ export function Dialog() {
   const battle = mode === "battle";
   const lines = d.text.slice(0, shown);
   return (
+    <>
+    <div className="dialog-shield" aria-hidden="true" />
     <div className={`dialog-wrap ${battle ? "in-battle" : ""}`}>
       {d.choices && done && (
         <div className="choices panel">
@@ -126,5 +129,6 @@ export function Dialog() {
         {done && !d.choices && !d.input && !d.auto && <span className="more">▼</span>}
       </div>
     </div>
+    </>
   );
 }

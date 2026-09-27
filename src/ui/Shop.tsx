@@ -163,17 +163,24 @@ export function PCScreen() {
   const act = (c: 0 | 1, i: number) =>
     void runScript(async () => {
       const s = G();
+      if (!active) return;
       if (c === 0) {
         if (s.party.length <= 1) {
           await say({ en: "You can't deposit your last creature!", pt: "Você não pode guardar sua última criatura!" });
           return;
         }
+        if (s.party[i]?.hp > 0 && !s.party.some((m, index) => index !== i && m.hp > 0)) {
+          await say({ en: "Keep at least one healthy creature on your team!", pt: "Mantenha ao menos uma criatura saudável na equipe!" });
+          return;
+        }
+        if (!s.party[i]) return;
         const [m] = s.party.splice(i, 1);
         s.box.push(m);
         touch();
         sfx("select");
         await say(tr({ en: "{n} was stored in the PC.", pt: "{n} foi guardado no PC." }, { n: displayName(m) }));
       } else {
+        if (!s.box[i]) return;
         if (s.party.length >= 6) {
           await say({ en: "Your team is full!", pt: "Sua equipe está cheia!" });
           return;

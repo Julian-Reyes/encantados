@@ -53,7 +53,7 @@ export const currentEvo = () => evo;
 export async function runEvolutions(uids: string[]) {
   for (const uid of uids) {
     const mon = G().party.find((m) => m.uid === uid);
-    if (!mon) continue;
+    if (!mon || mon.hp <= 0) continue;
     const e = SPECIES[mon.species].evolves;
     if (!e || mon.level < e.level) continue;
     const from = mon.species;

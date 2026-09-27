@@ -44,11 +44,13 @@ function Rig() {
   scene.fog = fog;
   scene.background = bg;
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, size }) => {
     const s = G();
     if (s.mode === "battle") {
-      camera.position.set(BATTLE_ORIGIN.x + 0.2, 1.75, BATTLE_ORIGIN.z + 5.3);
-      camera.lookAt(BATTLE_ORIGIN.x + 0.25, 0.7, BATTLE_ORIGIN.z - 0.6);
+      // Fit both platforms horizontally, including on portrait screens.
+      const distance = Math.max(8.5, 6.8 / (size.width / size.height));
+      camera.position.set(BATTLE_ORIGIN.x, 3, BATTLE_ORIGIN.z + distance);
+      camera.lookAt(BATTLE_ORIGIN.x, -0.2, BATTLE_ORIGIN.z - 0.3);
       target.copy(BATTLE_ORIGIN);
       bg.set("#bfe8ff");
       fog.near = 30;

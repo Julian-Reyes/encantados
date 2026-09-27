@@ -273,7 +273,7 @@ async function starterTable(x: number) {
   await speak(PROF, { en: "And here are 5 Amulets. Throw one at a weakened wild creature to catch it!", pt: "E aqui estão 5 Amuletos. Jogue um numa criatura selvagem enfraquecida para capturá-la!" });
   void jingle("item");
   await say(tr({ en: "{player} received 5 Amulets!", pt: "{player} recebeu 5 Amuletos!" }));
-  await speak(RIVAL, { en: "I'm off to Route 1 to toughen up my {n}. Try to keep up, {player}!", pt: "Vou para a Rota 1 treinar meu {n}. Tente me acompanhar, {player}!" }, );
+  await speak(RIVAL, tr({ en: "I'm off to Route 1 to toughen up my {n}. Try to keep up, {player}!", pt: "Vou para a Rota 1 treinar meu {n}. Tente me acompanhar, {player}!" }, { n: SPECIES[rs].name }));
   // Walk out around the tables.
   await walk("labRival", "down", 3);
   await walk("labRival", "left", 3);
@@ -295,7 +295,7 @@ async function rivalRoute() {
   face("player", "up");
   await walk("rival", "down", 35 - 32, 5);
   await speak(RIVAL,
-    { en: "Took you long enough! My {n} and I have been training nonstop.", pt: "Demorou, hein! Eu e meu {n} treinamos sem parar." },
+    tr({ en: "Took you long enough! My {n} and I have been training nonstop.", pt: "Demorou, hein! Eu e meu {n} treinamos sem parar." }, { n: SPECIES[rivalStarter()].name }),
     { en: "Let's see what your creature can do!", pt: "Vamos ver do que sua criatura é capaz!" },
   );
   const team = [createMon("pardalito", 4), createMon(rivalStarter(), 6)];
@@ -513,4 +513,3 @@ export function onExitAttempt() {
     await warp("overworld", ext[0], ext[1], "down");
   });
 }
-

@@ -5,7 +5,7 @@ import { Scene } from "./three/Scene";
 import { G, useGame } from "./game/store";
 import { input, installKeyboard } from "./game/input";
 import { unlockAudio } from "./game/audio";
-import { controlsLocked, interact } from "./world/runtime";
+import { controlsLocked, interact, rt } from "./world/runtime";
 import { Dialog } from "./ui/Dialog";
 import { Battle } from "./ui/Battle";
 import { Evolution } from "./ui/Evolution";
@@ -25,7 +25,7 @@ export function App() {
     installKeyboard();
     input.setWorldHandler((b) => {
       if (b === "a") interact();
-      else if (b === "start" && !controlsLocked()) G().set({ screen: "menu" });
+      else if (b === "start" && !controlsLocked() && !rt.player.moving) G().set({ screen: "menu" });
     });
     const unlock = () => unlockAudio();
     window.addEventListener("pointerdown", unlock);

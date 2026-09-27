@@ -42,14 +42,10 @@ function tween(from: number, to: number, ms: number, onStep: (v: number) => void
 
 export function Battle() {
   const mode = useGame((s) => s.mode);
-  const [key, setKey] = useState(0);
-  const prev = useRef(mode);
-  useEffect(() => {
-    if (mode === "battle" && prev.current !== "battle") setKey((k) => k + 1);
-    prev.current = mode;
-  }, [mode]);
   if (mode !== "battle") return null;
-  return <BattleInner key={key} />;
+  // Leaving battle already unmounts this component. Changing its key on entry
+  // launches a second engine while the first is still waiting for dialogue.
+  return <BattleInner />;
 }
 
 function BattleInner() {

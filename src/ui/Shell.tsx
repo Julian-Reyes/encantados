@@ -29,6 +29,7 @@ export function Title() {
   }, [mode]);
 
   const choose = (id: string) => {
+    if (G().fade) return;
     unlockAudio();
     if (id === "lang") {
       sfx("cursor");
