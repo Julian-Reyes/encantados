@@ -2,7 +2,10 @@
 @font-face { font-family:"Pixelify Sans"; font-style:normal; font-weight:600; font-display:swap; src:url("./assets/fonts/pixelify-600.ttf") format("truetype"); }
 @font-face { font-family:"Pixelify Sans"; font-style:normal; font-weight:700; font-display:swap; src:url("./assets/fonts/pixelify-700.ttf") format("truetype"); }
 @font-face { font-family:"Press Start 2P"; font-style:normal; font-weight:400; font-display:swap; src:url("./assets/fonts/press-start-2p.ttf") format("truetype"); }
-:root { --ink:#1e2433; --panel:#fbfaf5; --edge:#3a4a6a; --sel:#e8453a; --font:"Pixelify Sans",ui-monospace,monospace; }
+/* Pixelify's 8 reads like an S, so digits (and only digits) come from Press Start 2P,
+   shrunk to match Pixelify's smaller glyph height. */
+@font-face { font-family:"Pixel Digits"; font-style:normal; font-display:swap; src:url("./assets/fonts/press-start-2p.ttf") format("truetype"); unicode-range:U+0030-0039; size-adjust:80%; }
+:root { --ink:#1e2433; --panel:#fbfaf5; --edge:#3a4a6a; --sel:#e8453a; --font:"Pixel Digits","Pixelify Sans",ui-monospace,monospace; }
 * { box-sizing:border-box; }
 html,body,#root { margin:0; height:100%; overflow:hidden; background:#1c2a44; color:var(--ink); font-family:var(--font); -webkit-user-select:none; user-select:none; touch-action:none; }
 .app { position:fixed; inset:0; }
