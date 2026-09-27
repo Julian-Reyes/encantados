@@ -48,9 +48,11 @@ function Rig() {
     const s = G();
     if (s.mode === "battle") {
       // Fit both platforms horizontally, including on portrait screens.
-      const distance = Math.max(8.5, 6.8 / (size.width / size.height));
-      camera.position.set(BATTLE_ORIGIN.x, 3, BATTLE_ORIGIN.z + distance);
-      camera.lookAt(BATTLE_ORIGIN.x, -0.2, BATTLE_ORIGIN.z - 0.3);
+      // Close framing on 16:10 or wider; narrower screens pull back along the same angle
+      // so the view stays as wide as it is at 16:10.
+      const k = Math.max(1, 1.6 / (size.width / size.height));
+      camera.position.set(BATTLE_ORIGIN.x + 0.2, 0.7 + 1.05 * k, BATTLE_ORIGIN.z - 0.6 + 5.9 * k);
+      camera.lookAt(BATTLE_ORIGIN.x + 0.25, 0.7, BATTLE_ORIGIN.z - 0.6);
       target.copy(BATTLE_ORIGIN);
       bg.set("#bfe8ff");
       fog.near = 30;
