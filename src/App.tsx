@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { Scene } from "./three/Scene";
@@ -18,6 +18,9 @@ let installed = false;
 export function App() {
   const screen = useGame((s) => s.screen);
   const touchOn = useGame((s) => s.touch);
+  const lowGfx = useGame((s) => s.lowGfx);
+  // Bumping this remounts the Canvas, which builds a fresh WebGL context after the GPU drops ours.
+  const [glGen, setGlGen] = useState(0);
 
   useEffect(() => {
     if (installed) return;
@@ -38,11 +41,18 @@ export function App() {
   return (
     <div className={`app ${touchOn ? "has-touch" : ""}`}>
       <Canvas
-        shadows={{ type: THREE.PCFShadowMap }}
-        dpr={[1, 1.5]}
+        key={`${glGen}-${lowGfx}`}
+        shadows={lowGfx ? false : { type: THREE.PCFShadowMap }}
+        dpr={lowGfx ? 1 : [1, 1.5]}
         frameloop={paused ? "demand" : "always"}
         camera={{ fov: 40, near: 0.1, far: 220, position: [15, 8, 70] }}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        gl={{ antialias: !lowGfx, powerPreference: "high-performance" }}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener("webglcontextlost", (e) => {
+            e.preventDefault();
+            setTimeout(() => setGlGen((n) => n + 1), 500);
+          }, { once: true });
+        }}
       >
         <Scene />
       </Canvas>

@@ -48,7 +48,7 @@ export async function runIntro() {
   );
   G().set({ introShow: "player" });
   await speak(PROF, { en: "Now, tell me about yourself. What's your name?", pt: "Agora, me conte sobre você. Qual é o seu nome?" });
-  const name = (await promptText({ en: "Your name?", pt: "Seu nome?" }, G().playerName, 10)).trim() || "Ana";
+  const name = (await promptText({ en: "Your name?", pt: "Seu nome?" }, G().playerName, 10)).trim() || "Caju";
   G().set({ playerName: name });
   await speak(PROF, { en: "{player}! What a fine name.", pt: "{player}! Que belo nome." });
   G().set({ introShow: "rival" });
@@ -160,7 +160,7 @@ async function trainerBattle(def: NpcDef, spotted: boolean) {
 
 export async function whiteout() {
   const s = G();
-  const lost = Math.floor(s.money / 2);
+  const lost = Math.min(Math.floor(s.money / 2), 150);
   await say(tr({ en: "{player} hurried back to safety, carrying the exhausted creatures...", pt: "{player} correu para um lugar seguro, carregando as criaturas exaustas..." }));
   if (lost > 0) await say(tr({ en: "{player} dropped R${m} in the rush!", pt: "{player} deixou cair R${m} na correria!" }, { m: lost }));
   await fadeOut();
@@ -257,6 +257,7 @@ async function starterTable(x: number) {
   await walk("labRival", "left", 1);
   face("labRival", "up");
   await speak(RIVAL, { en: "Then I'll take this one!", pt: "Então eu fico com este!" });
+  setFlag("rivalHasStarter");
   void jingle("item");
   await say(tr({ en: "{rival} received {n}!", pt: "{rival} recebeu {n}!" }, { n: SPECIES[rs].name }));
   faceToward("labRival", rt.player.x, rt.player.y);

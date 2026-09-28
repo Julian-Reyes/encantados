@@ -42,7 +42,15 @@ export function StartMenu() {
       }),
   });
   items.push({ label: tr({ en: "OPTIONS", pt: "OPÇÕES" }), run: () => open("options") });
-  items.push({ label: tr({ en: "EXIT", pt: "SAIR" }), run: close });
+  items.push({
+    label: tr({ en: "EXIT", pt: "SAIR" }),
+    run: () =>
+      void runScript(async () => {
+        if (await yesno({ en: "Return to the title screen? Unsaved progress will be lost.", pt: "Voltar à tela inicial? O progresso não salvo será perdido." })) {
+          G().set({ screen: null, mode: "title" });
+        }
+      }),
+  });
   const active = screen === "menu" && !dialog;
   const idx = Math.min(cursor, items.length - 1);
 
@@ -648,6 +656,7 @@ export function OptionsScreen() {
       },
     },
     { label: { en: "TOUCH PAD", pt: "CONTROLE NA TELA" }, value: s.touch ? "ON" : "OFF", toggle: () => s.set({ touch: !s.touch }) },
+    { label: { en: "GRAPHICS", pt: "GRÁFICOS" }, value: s.lowGfx ? (s.lang === "en" ? "LOW" : "BAIXO") : (s.lang === "en" ? "HIGH" : "ALTO"), toggle: () => s.set({ lowGfx: !s.lowGfx }) },
   ];
   const act = (i: number) => {
     rows[i].toggle();

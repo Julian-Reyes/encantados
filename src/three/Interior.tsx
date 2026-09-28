@@ -134,9 +134,11 @@ function StarterTable({ x, y }: { x: number; y: number }) {
   const flags = useGame((s) => s.flags);
   const species = STARTERS[x - 5];
   const taken = flag("hasStarter") || party > 0;
-  // After the choice, only the amulet neither kid took is left on the table.
+  // The rival's amulet stays until he picks it (older saves: he's already left the lab).
+  const rivalTook = taken && (flag("rivalHasStarter") || !flag("rivalInLab"));
+  // After both choices, only the amulet neither kid took is left on the table.
   const counter: Record<string, string> = { fagulho: "bolhuga", bolhuga: "brotapo", brotapo: "fagulho" };
-  const show = !taken || (species !== starter && species !== counter[starter ?? ""]);
+  const show = !taken || (species !== starter && !(rivalTook && species === counter[starter ?? ""]));
   void flags;
   return (
     <group position={[x, 0, y]}>

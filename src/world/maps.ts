@@ -239,10 +239,10 @@ export const NPCS: NpcDef[] = [
     id: "ze", map: "overworld", x: 19, y: 49, facing: "left", look: "youngster",
     trainer: {
       name: { en: "Youngster Zé", pt: "Garoto Zé" },
-      team: [["ratico", 4], ["ratico", 5]],
+      team: [["ratico", 4]],
       reward: 120,
-      intro: { en: "Hey! You look new around here. My Ratiço are top of the line! Battle me!", pt: "Ei! Você é novo por aqui. Meus Ratiço são os melhores! Vamos batalhar!" },
-      win: { en: "Aw man! My Ratiço need more cheese...", pt: "Poxa! Meus Ratiço precisam de mais queijo..." },
+      intro: { en: "Hey! You look new around here. My Ratiço is top of the line! Battle me!", pt: "Ei! Você é novo por aqui. Meu Ratiço é o melhor! Vamos batalhar!" },
+      win: { en: "Aw man! My Ratiço needs more cheese...", pt: "Poxa! Meu Ratiço precisa de mais queijo..." },
       after: { en: "Ratiço are fast, but I guess speed isn't everything.", pt: "Ratiço é rápido, mas acho que velocidade não é tudo." },
       sight: 5,
     },

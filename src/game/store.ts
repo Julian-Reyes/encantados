@@ -53,6 +53,7 @@ export interface GameState extends SaveData {
   wipe: boolean;
   sound: boolean;
   music: boolean;
+  lowGfx: boolean;
   touch: boolean;
   rev: number;
   preview: SpeciesId | null;
@@ -65,7 +66,7 @@ export function newSave(): SaveData {
   return {
     v: 1,
     lang: (navigator.language || "en").toLowerCase().startsWith("pt") ? "pt" : "en",
-    playerName: "Ana",
+    playerName: "Caju",
     rivalName: "Caio",
     money: 3000,
     party: [],
@@ -92,6 +93,7 @@ export const useGame = create<GameState>((set) => ({
   wipe: false,
   sound: true,
   music: true,
+  lowGfx: false,
   touch: isTouch,
   rev: 0,
   preview: null,
@@ -170,7 +172,7 @@ export function saveGame(pos: Spot): boolean {
   };
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
-    localStorage.setItem(KEY + "-prefs", JSON.stringify({ sound: s.sound, music: s.music, lang: s.lang }));
+    localStorage.setItem(KEY + "-prefs", JSON.stringify({ sound: s.sound, music: s.music, lang: s.lang, lowGfx: s.lowGfx }));
     return true;
   } catch {
     return false;
@@ -193,7 +195,7 @@ export function loadPrefs() {
   try {
     const p = JSON.parse(localStorage.getItem(KEY + "-prefs") || "{}");
     const s = G();
-    s.set({ sound: p.sound ?? true, music: p.music ?? true, lang: p.lang ?? s.lang });
+    s.set({ sound: p.sound ?? true, music: p.music ?? true, lang: p.lang ?? s.lang, lowGfx: p.lowGfx ?? false });
   } catch {
     /* private mode: defaults are fine */
   }
@@ -202,7 +204,7 @@ export function loadPrefs() {
 export function savePrefs() {
   const s = G();
   try {
-    localStorage.setItem(KEY + "-prefs", JSON.stringify({ sound: s.sound, music: s.music, lang: s.lang }));
+    localStorage.setItem(KEY + "-prefs", JSON.stringify({ sound: s.sound, music: s.music, lang: s.lang, lowGfx: s.lowGfx }));
   } catch {
     /* ignore */
   }
