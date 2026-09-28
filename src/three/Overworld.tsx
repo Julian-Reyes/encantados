@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { BUILDINGS, GROUND_ITEMS, OW_H, OW_W, OW_Y0, SIGNS, owTile, type Building } from "../world/maps";
 import { useGame } from "../game/store";
-import { mat, glow, Bx, Cy, Cn, Sph, GEO } from "./prims";
+import { mat, glow, Bx, Cy, Sph, Tor, GEO, Crystal, CrystalCluster, MineCart } from "./prims";
 import { AmuletModel } from "./Amulet";
 
 // Deterministic pseudo-random so the map looks the same every load.
@@ -241,10 +241,18 @@ function BuildingMesh({ b }: { b: Building }) {
   const cz = b.y + (b.h - 1) / 2;
   const W = b.w - 0.1;
   const D = b.h - 0.1;
-  const wallH = { home: 1.35, rivalhouse: 1.35, house: 1.3, lab: 1.7, center: 1.6, mart: 1.5, church: 2.1, arena: 2.2 }[b.kind];
+  const wallH = { home: 1.35, rivalhouse: 1.35, house: 1.3, lab: 1.7, center: 1.6, mart: 1.5, church: 2.1, arena: 0 }[b.kind];
   const front = D / 2 + 0.01;
   const doorX = b.door[0] - cx;
-  const trim = b.kind === "house" || b.kind === "home" || b.kind === "rivalhouse" ? "#2f6fb0" : "#555";
+  if (b.kind === "arena")
+    return (
+      <group position={[cx, 0, cz]}>
+        <Arena W={W} D={D} doorX={doorX} rock={b.color} topaz={b.roof} />
+      </group>
+    );
+  const accent = b.kind === "center" ? CENTER_RED : b.kind === "mart" ? MART_BLUE : null;
+  const trim = b.kind === "house" || b.kind === "home" || b.kind === "rivalhouse" ? "#2f6fb0" : accent ?? "#555";
+  const doorC = accent || b.kind === "lab" ? "#9ad0f0" : "#6a3e22";
   const windowXs: number[] = [];
   for (let i = 0; i < b.w; i++) {
     const wx = -W / 2 + 0.5 + i;
@@ -254,27 +262,25 @@ function BuildingMesh({ b }: { b: Building }) {
     <group position={[cx, 0, cz]}>
       <mesh geometry={GEO.box} material={mat(b.color)} position={[0, wallH / 2, 0]} scale={[W, wallH, D]} castShadow receiveShadow />
       {/* base trim */}
-      <Bx p={[0, 0.08, 0]} s={[W + 0.04, 0.16, D + 0.04]} c={b.kind === "church" ? "#c9b48a" : "#8a7a66"} />
+      {accent ? (
+        <Bx p={[0, 0.15, 0]} s={[W + 0.04, 0.3, D + 0.04]} c={accent} />
+      ) : (
+        <Bx p={[0, 0.08, 0]} s={[W + 0.04, 0.16, D + 0.04]} c={b.kind === "church" ? "#c9b48a" : "#8a7a66"} />
+      )}
       {b.kind === "church" ? (
         <Church W={W} D={D} wallH={wallH} />
-      ) : b.kind === "arena" ? (
-        <>
-          <Roof w={W + 0.2} d={D + 0.2} h={0.9} y={wallH} color={b.roof} />
-          <Cy p={[0, wallH + 0.95, 0]} s={[0.06, 0.4, 0.06]} c="#ddd" />
-          <Cn p={[0, wallH + 1.25, 0]} s={[0.25, 0.3, 0.25]} c="#f2c230" />
-        </>
       ) : (
-        <Roof w={W + 0.2} d={D + 0.2} h={b.kind === "lab" ? 0.7 : 1} y={wallH} color={b.roof} />
+        // Shops get a low roof so the rooftop sign stands out; houses keep the steep one.
+        <Roof w={W + 0.2} d={D + 0.2} h={accent ? 0.5 : b.kind === "lab" ? 0.7 : 1} y={wallH} color={b.roof} />
       )}
+      {accent && <ShopFront kind={b.kind as "center" | "mart"} c={accent} W={W} D={D} wallH={wallH} doorX={doorX} front={front} />}
       {/* door */}
       <group position={[doorX, 0, front]}>
-        <Bx p={[0, 0.5, 0]} s={[0.62, 1.0, 0.06]} c={b.kind === "center" || b.kind === "mart" || b.kind === "lab" ? "#9ad0f0" : "#6a3e22"} shadow={false} />
+        <Bx p={[0, 0.5, 0]} s={[0.62, 1.0, 0.06]} c={doorC} shadow={false} />
         <Bx p={[0, 1.04, 0]} s={[0.74, 0.08, 0.08]} c={trim} shadow={false} />
         <Bx p={[0, 0.02, 0.25]} s={[0.8, 0.04, 0.4]} c="#b8a88a" />
       </group>
       {b.kind !== "church" && windowXs.map((wx) => <Window key={wx} x={wx} y={wallH * 0.58} z={front} frame={trim} w={b.kind === "lab" ? 0.55 : 0.36} />)}
-      {b.kind === "center" && <Emblem x={doorX} y={wallH + 0.05} z={front + 0.05} kind="center" />}
-      {b.kind === "mart" && <Emblem x={doorX} y={wallH + 0.05} z={front + 0.05} kind="mart" />}
       {b.kind === "lab" && (
         <group position={[W / 2 - 0.6, wallH + 0.5, -0.3]}>
           <Cy s={[0.04, 0.6, 0.04]} c="#aaa" />
@@ -288,22 +294,183 @@ function BuildingMesh({ b }: { b: Building }) {
   );
 }
 
-function Emblem({ x, y, z, kind }: { x: number; y: number; z: number; kind: "center" | "mart" }) {
-  const c = kind === "center" ? "#e0342c" : "#3a7bd5";
+// Healing center (red, cross) and shop (blue, bag): coloured trim, an awning over the
+// entrance and a big sign standing on the eave above the door. The sign has to sit at the
+// front: the follow camera only sees a few tiles north, so a sign on the roof peak is off
+// screen by the time you reach the door.
+const CENTER_RED = "#e0342c";
+const MART_BLUE = "#3a7bd5";
+
+function ShopFront({ kind, c, W, D, wallH, doorX, front }: { kind: "center" | "mart"; c: string; W: number; D: number; wallH: number; doorX: number; front: number }) {
+  const stripes = Math.round((W + 0.1) / 0.3);
+  const sw = (W + 0.1) / stripes;
+  const eave = 0.56 * (D + 0.2); // how far the Roof reaches past the building's centre
   return (
-    <group position={[x, y, z]}>
-      <Bx s={[1.3, 0.42, 0.06]} c="#ffffff" />
+    <group>
       {kind === "center" ? (
-        <>
-          <Bx p={[0, 0, 0.04]} s={[0.26, 0.08, 0.02]} c={c} shadow={false} />
-          <Bx p={[0, 0, 0.04]} s={[0.08, 0.26, 0.02]} c={c} shadow={false} />
-        </>
+        <group position={[doorX, 1.3, front]} rotation={[0.45, 0, 0]}>
+          <Bx p={[0, 0, 0.18]} s={[1.1, 0.05, 0.36]} c={c} />
+          <Bx p={[0, -0.05, 0.36]} s={[1.1, 0.1, 0.03]} c="#ffffff" />
+        </group>
       ) : (
-        <>
-          <Bx p={[0, -0.03, 0.04]} s={[0.24, 0.2, 0.02]} c={c} shadow={false} />
-          <Bx p={[0, 0.1, 0.04]} s={[0.12, 0.06, 0.02]} c={c} shadow={false} />
-        </>
+        <group position={[0, 1.2, front]} rotation={[0.45, 0, 0]}>
+          {Array.from({ length: stripes }, (_, i) => (
+            <Bx key={i} p={[-(W + 0.1) / 2 + sw * (i + 0.5), 0, 0.18]} s={[sw, 0.05, 0.36]} c={i % 2 ? "#ffffff" : c} />
+          ))}
+        </group>
       )}
+      <group position={[doorX, wallH + 0.3, eave + 0.06]}>
+        {kind === "center" ? (
+          <>
+            <Cy r={[Math.PI / 2, Math.PI / 8, 0]} s={[0.6, 0.08, 0.6]} c={c} />
+            <Cy p={[0, 0, 0.03]} r={[Math.PI / 2, Math.PI / 8, 0]} s={[0.52, 0.06, 0.52]} c="#ffffff" />
+            <Bx p={[0, 0, 0.07]} s={[0.72, 0.24, 0.04]} c={c} g />
+            <Bx p={[0, 0, 0.07]} s={[0.24, 0.72, 0.04]} c={c} g />
+          </>
+        ) : (
+          <>
+            <Bx s={[1.3, 0.8, 0.08]} c="#ffffff" />
+            <Bx p={[0, 0, 0.03]} s={[1.18, 0.68, 0.06]} c={c} />
+            {/* shopping bag: the handle's lower half hides behind the body */}
+            <Tor p={[0, 0.08, 0.04]} s={[0.1, 0.1, 0.1]} c="#ffffff" g />
+            <Bx p={[0, -0.07, 0.07]} s={[0.38, 0.3, 0.02]} c="#ffffff" g />
+          </>
+        )}
+      </group>
+    </group>
+  );
+}
+
+// The gym, Topázio's rock arena: an old Minas Gerais mine dug into a craggy hill. A timber
+// portal is the door, a mine cart full of topaz waits on the rails, a headframe's winding
+// wheel turns on the shoulder of the hill and a big topaz crystal crowns the peak.
+const WOOD = "#6b4a2a";
+const IRON = "#4a4a4a";
+
+// [x, y, z, sx, sy, sz, tone] boulders forming the hill; the portal at x = 0 stays clear.
+const HILL: [number, number, number, number, number, number, number][] = [
+  [-2.6, 1.55, 1.5, 0.9, 0.7, 0.7, 0],
+  [-1.45, 1.7, 1.55, 0.75, 0.6, 0.6, 1],
+  [0, 2.0, 1.3, 0.85, 0.55, 0.7, 2],
+  [1.45, 1.65, 1.55, 0.75, 0.65, 0.6, 0],
+  [2.6, 1.55, 1.5, 0.9, 0.7, 0.7, 1],
+  [-2.0, 2.3, 0.2, 1.1, 0.9, 1.0, 2],
+  [-0.3, 2.55, 0.0, 1.2, 1.0, 1.1, 0],
+  [1.6, 2.35, 0.3, 1.0, 0.85, 1.0, 1],
+  [-1.2, 2.8, -1.0, 1.1, 1.1, 1.0, 1],
+  [0.9, 2.45, -1.3, 1.0, 0.9, 0.9, 2],
+  [-2.7, 2.0, -1.4, 0.8, 0.8, 0.8, 0],
+  [2.5, 1.9, -1.2, 0.85, 0.85, 0.8, 0],
+  [-3.2, 0.7, 1.4, 0.7, 0.8, 0.6, 1],
+  [3.2, 0.7, 1.4, 0.7, 0.8, 0.6, 2],
+  [-1.75, 0.8, 1.8, 0.5, 0.65, 0.3, 2],
+  [2.4, 0.95, 1.75, 0.55, 0.55, 0.3, 0],
+  [2.95, 1.2, -0.7, 0.6, 0.8, 0.7, 1],
+  [-2.95, 1.2, -0.6, 0.6, 0.8, 0.7, 2],
+  [-2.3, 0.25, 2.0, 0.45, 0.35, 0.4, 0],
+];
+
+function Arena({ W, D, doorX, rock, topaz }: { W: number; D: number; doorX: number; rock: string; topaz: string }) {
+  const wheel = useRef<THREE.Group>(null);
+  const gem = useRef<THREE.Group>(null);
+  const lamps = useRef<(THREE.Group | null)[]>([]);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (wheel.current) wheel.current.rotation.z = -t * 0.8;
+    if (gem.current) {
+      gem.current.rotation.y = t * 0.9;
+      gem.current.position.y = 3.72 + Math.sin(t * 1.8) * 0.06;
+    }
+    lamps.current.forEach((l, i) => l && (l.rotation.z = Math.sin(t * 1.6 + i * 1.7) * 0.12));
+  });
+
+  const tones = [rock, "#7a7065", "#a39a8c"];
+  const faceZ = D / 2 - 0.55; // the rock face stands back so the apron stays inside the footprint
+  const back = -D / 2;
+  return (
+    <group>
+      {/* rock body and the boulders heaped on it */}
+      <mesh geometry={GEO.box} material={mat(rock)} position={[0, 0.9, (faceZ + back) / 2]} scale={[W, 1.8, faceZ - back]} castShadow receiveShadow />
+      {HILL.map(([x, y, z, sx, sy, sz, tone], i) => (
+        <mesh key={i} geometry={GEO.rock} material={mat(tones[tone])} position={[x, y, z]} scale={[sx, sy, sz]} rotation={[hash(i, 1) * 6, hash(i, 2) * 6, hash(i, 3) * 6]} castShadow receiveShadow />
+      ))}
+      {/* gravel apron */}
+      <Bx p={[0, 0.03, faceZ + 0.27]} s={[W, 0.06, 0.6]} c="#9b8f7c" shadow={false} />
+
+      {/* topaz veins breaking through the rock, and the big crystal on the peak */}
+      <CrystalCluster p={[-1.3, 1.25, 1.9]} s={0.4} topaz={topaz} />
+      <CrystalCluster p={[2.3, 2.15, 1.1]} s={0.5} topaz={topaz} />
+      <CrystalCluster p={[-1.9, 2.95, 0.2]} s={0.55} topaz={topaz} />
+      <group ref={gem} position={[-1.2, 3.72, -1.0]}>
+        <Crystal p={[0, -0.45, 0]} s={0.75} c={topaz} tip />
+        <Crystal p={[0, -0.45, 0]} s={0.75} r={[Math.PI, 0, 0]} c="#ffc34d" />
+      </group>
+
+      {/* timber mine portal (the door) */}
+      <group position={[doorX, 0, faceZ]}>
+        <Bx p={[0, 0.68, 0.01]} s={[1.0, 1.36, 0.04]} c="#15110d" shadow={false} />
+        {[-1, 1].map((sd) => (
+          <group key={sd}>
+            <Bx p={[sd * 0.58, 0.78, 0.1]} s={[0.16, 1.56, 0.16]} c={WOOD} />
+            <Bx p={[sd * 0.38, 1.33, 0.13]} r={[0, 0, sd * 0.785]} s={[0.09, 0.42, 0.09]} c={WOOD} />
+          </group>
+        ))}
+        <Bx p={[0, 1.62, 0.1]} s={[1.55, 0.2, 0.24]} c={WOOD} />
+        {/* sign: crossed pickaxes around a topaz */}
+        <group position={[0, 1.9, 0.23]}>
+          <Bx s={[0.95, 0.36, 0.06]} c="#9a6d3e" />
+          <Bx p={[0, 0, 0.04]} r={[0, 0, Math.PI / 4]} s={[0.17, 0.17, 0.04]} c="#ffc34d" g />
+          {[-1, 1].map((sd) => (
+            <group key={sd} position={[sd * 0.3, 0, 0.04]} rotation={[0, 0, sd * 0.6]}>
+              <Bx s={[0.035, 0.28, 0.02]} c="#5a3a1e" shadow={false} />
+              <Bx p={[0, 0.12, 0]} s={[0.2, 0.045, 0.025]} c="#b8b8b8" shadow={false} />
+            </group>
+          ))}
+        </group>
+        {/* lanterns hanging from the lintel ends */}
+        {[-1, 1].map((sd, i) => (
+          <group key={sd} ref={(g) => void (lamps.current[i] = g)} position={[sd * 0.72, 1.52, 0.25]}>
+            <Bx p={[0, -0.07, 0]} s={[0.02, 0.14, 0.02]} c={IRON} shadow={false} />
+            <Bx p={[0, -0.23, 0]} s={[0.15, 0.2, 0.15]} c={IRON} shadow={false} />
+            <Bx p={[0, -0.23, 0]} s={[0.11, 0.15, 0.17]} c="#ffcf6a" g />
+          </group>
+        ))}
+        {/* rails running out of the tunnel */}
+        {[-0.25, 0.25].map((x) => (
+          <Bx key={x} p={[x, 0.09, 0.45]} s={[0.05, 0.04, 1.0]} c="#8a8a8a" shadow={false} />
+        ))}
+        {[0.12, 0.4, 0.68, 0.92].map((z) => (
+          <Bx key={z} p={[0, 0.065, z]} s={[0.7, 0.03, 0.1]} c={WOOD} shadow={false} />
+        ))}
+      </group>
+
+      {/* mine cart of topaz on a siding */}
+      <group position={[doorX + 1.9, 0, faceZ + 0.3]}>
+        {[-0.18, 0.18].map((z) => (
+          <Bx key={z} p={[0, 0.08, z]} s={[1.3, 0.04, 0.05]} c="#8a8a8a" shadow={false} />
+        ))}
+        <MineCart />
+      </group>
+
+      {/* headframe: timber tower with a turning winding wheel */}
+      <group position={[2.2, 1.9, -1.0]}>
+        {[-1, 1].map((sd) => (
+          <group key={sd}>
+            <Bx p={[sd * 0.3, 0.85, 0.2]} r={[0, 0, sd * 0.18]} s={[0.1, 1.75, 0.1]} c={WOOD} />
+            <Bx p={[sd * 0.3, 0.85, -0.2]} r={[0, 0, sd * 0.18]} s={[0.1, 1.75, 0.1]} c={WOOD} />
+          </group>
+        ))}
+        <Bx p={[0, 0.55, 0.2]} s={[0.66, 0.08, 0.08]} c={WOOD} />
+        <Bx p={[0, 1.15, 0.2]} s={[0.5, 0.08, 0.08]} c={WOOD} />
+        <Bx p={[0, 1.7, 0]} s={[0.46, 0.1, 0.5]} c={WOOD} />
+        <group ref={wheel} position={[0, 2.1, 0]}>
+          <Tor s={[0.38, 0.38, 0.25]} c={IRON} />
+          {[0, 1, 2].map((k) => (
+            <Bx key={k} r={[0, 0, (k * Math.PI) / 3]} s={[0.72, 0.04, 0.04]} c={IRON} />
+          ))}
+          <Cy r={[Math.PI / 2, 0, 0]} s={[0.07, 0.12, 0.07]} c="#c9a24a" />
+        </group>
+      </group>
     </group>
   );
 }

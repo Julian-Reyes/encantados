@@ -119,6 +119,7 @@ function areaName(): string {
     center2: { en: "HEALING CENTER", pt: "CENTRO DE CURA" },
     mart1: { en: "SHOP", pt: "LOJA" },
     mart2: { en: "SHOP", pt: "LOJA" },
+    arena1: { en: "CIDADE IPÊ ARENA", pt: "ARENA DE CIDADE IPÊ" },
   };
   return tr(names[rt.map]).toUpperCase();
 }

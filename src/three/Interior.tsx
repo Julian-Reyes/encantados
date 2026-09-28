@@ -7,7 +7,7 @@ import type * as THREE from "three";
 import { INTERIORS } from "../world/maps";
 import { flag, useGame, type MapId } from "../game/store";
 import { STARTERS } from "../data/species";
-import { Bx, Cy, Sph, glow, mat, GEO } from "./prims";
+import { Bx, Cy, Sph, Rk, glow, mat, GEO, CrystalCluster, MineCart } from "./prims";
 import { AmuletModel } from "./Amulet";
 import { CreatureModel } from "./Creatures";
 
@@ -68,7 +68,7 @@ function Furniture({ ch, x, y, map }: { ch: string; x: number; y: number; map: M
     case "r":
       return <Bx p={[x, 0.01, y]} s={[1, 0.02, 1]} c="#c0504a" shadow={false} />;
     case "d":
-      return <Bx p={[x, 0.01, y]} s={[0.9, 0.02, 0.8]} c="#7a2a2a" shadow={false} />;
+      return <Bx p={[x, 0.01, y]} s={[0.9, 0.02, 0.8]} c={map === "arena1" ? "#5a4028" : "#7a2a2a"} shadow={false} />;
     case "c":
       return (
         <group position={[x, 0, y]}>
@@ -113,6 +113,13 @@ function Furniture({ ch, x, y, map }: { ch: string; x: number; y: number; map: M
     case "a":
       return <StarterTable x={x} y={y} />;
     case "o":
+      if (map === "arena1")
+        return (
+          <group>
+            <Rk p={[x, 0.4, y]} s={[0.5, 0.5, 0.48]} r={[0.3, (x * 7 + y * 3) % 6, 0.2]} c="#7d7266" />
+            {(x + y) % 3 === 0 && <CrystalCluster p={[x + 0.1, 0.65, y + 0.1]} s={0.35} />}
+          </group>
+        );
       return <mesh geometry={GEO.rock} material={mat("#9c8a70")} position={[x, 0.35, y]} scale={[0.5, 0.45, 0.48]} rotation={[0, (x * 7 + y * 3) % 6, 0]} castShadow receiveShadow />;
     default:
       return null;
@@ -177,6 +184,80 @@ function StarterTable({ x, y }: { x: number; y: number }) {
   );
 }
 
+const ROCK_TONES = ["#5e554b", "#6b6156", "#51493f"];
+
+/** Cave wall tile: a stone block with a boulder bulging out of its inner face. */
+function MineWall({ x, y, H, c, doorX }: { x: number; y: number; H: number; c: string; doorX: number }) {
+  const south = y === H - 1;
+  const h = south ? 0.25 : 1.9;
+  const tone = ROCK_TONES[(x * 2 + y) % 3];
+  const r: [number, number, number] = [(x * 3 + y) % 5, (x * 7 + y * 3) % 6, (x + y * 5) % 4];
+  let rock: JSX.Element | null;
+  if (y === 0 && Math.abs(x - doorX) <= 1) rock = null; // recess for the leader's topaz vein
+  else if (south) rock = <Rk p={[x, 0.22, y]} s={[0.55, 0.3, 0.5]} r={r} c={tone} />;
+  else if (y === 0) rock = <Rk p={[x, 1.0 + ((x * 5) % 3) * 0.15, y + 0.25]} s={[0.75, 1.0, 0.55]} r={r} c={tone} />;
+  else rock = <Rk p={[x + (x === 0 ? 0.22 : -0.22), 1.0 + ((y * 5) % 3) * 0.15, y]} s={[0.55, 1.0, 0.75]} r={r} c={tone} />;
+  return (
+    <group>
+      <Bx p={[x, h / 2, y]} s={[1, h, 1]} c={c} />
+      {rock}
+    </group>
+  );
+}
+
+const WOOD = "#6b4a2a";
+
+function Lantern({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Bx s={[0.16, 0.22, 0.16]} c="#3a3a3a" shadow={false} />
+      <Bx s={[0.12, 0.16, 0.18]} c="#ffcf6a" g />
+    </group>
+  );
+}
+
+/** Timber shoring, lanterns, the rail line and the topaz vein behind the leader. */
+function MineDecor({ W, H, doorX, cartY }: { W: number; H: number; doorX: number; cartY: number }) {
+  const sides = [0.62, W - 1.62];
+  const posts = [2, 5, 8].filter((y) => y < H - 1);
+  const railFrom = cartY + 0.3;
+  const railTo = H - 1.5;
+  const sleepers: number[] = [];
+  for (let z = railFrom + 0.15; z < railTo; z += 0.4) sleepers.push(z);
+  return (
+    <group>
+      {/* side-wall shoring */}
+      {sides.map((sx) => (
+        <group key={sx}>
+          {posts.map((y) => (
+            <Bx key={y} p={[sx, 0.95, y]} s={[0.14, 1.9, 0.14]} c={WOOD} />
+          ))}
+          <Bx p={[sx, 1.86, (posts[0] + posts[posts.length - 1]) / 2]} s={[0.16, 0.14, posts[posts.length - 1] - posts[0] + 0.3]} c={WOOD} />
+          <Lantern p={[sx + (sx < W / 2 ? 0.14 : -0.14), 1.45, posts[1] ?? posts[0]]} />
+        </group>
+      ))}
+      {/* back-wall frame around the leader's topaz vein */}
+      {[doorX - 3, doorX + 3].map((x) => (
+        <group key={x}>
+          <Bx p={[x, 0.95, 0.62]} s={[0.14, 1.9, 0.14]} c={WOOD} />
+          <Lantern p={[x, 1.45, 0.76]} />
+        </group>
+      ))}
+      <Bx p={[doorX, 1.86, 0.64]} s={[6.3, 0.16, 0.16]} c={WOOD} />
+      <CrystalCluster p={[doorX, 0.55, 0.62]} s={1.0} tip />
+      <CrystalCluster p={[doorX - 1.5, 0.9, 0.6]} s={0.5} />
+      <CrystalCluster p={[doorX + 1.6, 0.8, 0.6]} s={0.55} />
+      {/* rails from the door to the cart */}
+      {[-0.25, 0.25].map((dx) => (
+        <Bx key={dx} p={[doorX + dx, 0.05, (railFrom + railTo) / 2]} s={[0.05, 0.04, railTo - railFrom]} c="#8a8a8a" shadow={false} />
+      ))}
+      {sleepers.map((z) => (
+        <Bx key={z} p={[doorX, 0.02, z]} s={[0.7, 0.03, 0.1]} c={WOOD} shadow={false} />
+      ))}
+    </group>
+  );
+}
+
 function Preview() {
   const preview = useGame((s) => s.preview);
   const ref = useRef<THREE.Group>(null);
@@ -203,15 +284,28 @@ export function InteriorView({ map }: { map: MapId }) {
   const H = rows.length;
   const W = rows[0].length;
   const items: JSX.Element[] = [];
+  // The arena is a mine: rails run north from the door to a cart standing in the first boulder's spot.
+  const mine = map === "arena1";
+  const doorX = rows[H - 1].indexOf("d");
+  let cartY = H - 2;
+  while (cartY > 0 && rows[cartY][doorX] === ".") cartY--;
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const ch = rows[y][x];
-      if (ch === "#") {
+      if (ch === "#" && mine) {
+        items.push(<MineWall key={`w${x},${y}`} x={x} y={y} H={H} c={def.wall} doorX={doorX} />);
+      } else if (ch === "#") {
         const north = y === 0;
         const south = y === H - 1;
         const h = south ? 0.25 : 1.9;
         items.push(<Bx key={`w${x},${y}`} p={[x, h / 2, y]} s={[1, h, 1]} c={north ? def.wall : "#e8dcc8"} />);
         if (north && x > 0 && x < W - 1 && x % 3 === 1) items.push(<Bx key={`win${x}`} p={[x, 1.2, y + 0.51]} s={[0.6, 0.5, 0.02]} c="#bfe6ff" shadow={false} />);
+      } else if (mine && ch === "o" && x === doorX && y === cartY) {
+        items.push(
+          <group key={`f${x},${y}`} position={[x, 0, y]}>
+            <MineCart />
+          </group>,
+        );
       } else {
         items.push(<Furniture key={`f${x},${y}`} ch={ch} x={x} y={y} map={map} />);
       }
@@ -223,6 +317,7 @@ export function InteriorView({ map }: { map: MapId }) {
         <meshLambertMaterial color={def.floor} />
       </mesh>
       {items}
+      {mine && <MineDecor W={W} H={H} doorX={doorX} cartY={cartY} />}
       <Preview />
     </group>
   );

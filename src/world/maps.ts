@@ -177,7 +177,7 @@ const B_INFO: Record<string, { kind: BuildingKind; interior?: MapId; color: stri
   E: { kind: "center", interior: "center2", color: "#fbf6ef", roof: "#e0463c" },
   N: { kind: "mart", interior: "mart2", color: "#fbf6ef", roof: "#3a7bd5" },
   K: { kind: "church", color: "#fdfaf2", roof: "#b5542f" },
-  G: { kind: "arena", interior: "arena1", color: "#e8d6a8", roof: "#7a4fa0" },
+  G: { kind: "arena", interior: "arena1", color: "#8d8478", roof: "#f0a030" },
   h: { kind: "house", color: "#f7c873", roof: "#b8472e" },
 };
 const HOUSE_COLORS = ["#f7c873", "#9fd3c7", "#f2a6a0", "#c3b1e1"];
@@ -230,7 +230,7 @@ export const INTERIORS: Record<Exclude<MapId, "overworld">, Interior> = {
   center2: { rows: CENTER_ROWS, floor: "#f5e9e0", wall: "#fdf7f2", music: "lab" },
   mart1: { rows: MART_ROWS, floor: "#dfe8f2", wall: "#f5f8fb", music: "lab" },
   mart2: { rows: MART_ROWS, floor: "#dfe8f2", wall: "#f5f8fb", music: "lab" },
-  arena1: { rows: ARENA_ROWS, floor: "#c9b48a", wall: "#e8d6a8", music: "town" },
+  arena1: { rows: ARENA_ROWS, floor: "#8a7a66", wall: "#5e554b", music: "town" },
 };
 
 export function interiorDoor(map: MapId): [number, number] {

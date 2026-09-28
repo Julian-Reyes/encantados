@@ -82,3 +82,41 @@ export function Eye({ p, s = 0.05, c = "#1b1b24", white = false }: { p: V3; s?: 
     </group>
   );
 }
+
+// Topaz, the rock arena's gem: a hexagonal prism with a pointed tip.
+export const TOPAZ = "#f0a030";
+
+export function Crystal({ p, s, r = [0, 0, 0], c, tip }: { p: V3; s: number; r?: V3; c: string; tip?: boolean }) {
+  return (
+    <group position={p} rotation={r} scale={s}>
+      <mesh geometry={GEO.cyl6} material={mat(c)} position={[0, 0.3, 0]} scale={[0.3, 0.6, 0.3]} castShadow />
+      <mesh geometry={GEO.cone} material={tip ? glow("#ffd66b") : mat(c)} position={[0, 0.8, 0]} scale={[0.3, 0.4, 0.3]} castShadow={!tip} />
+    </group>
+  );
+}
+
+export function CrystalCluster({ p, s, topaz = TOPAZ, tip }: { p: V3; s: number; topaz?: string; tip?: boolean }) {
+  return (
+    <group position={p} scale={s}>
+      <Crystal p={[0, 0, 0]} s={1} c={topaz} tip={tip} />
+      <Crystal p={[0.25, -0.05, 0.05]} s={0.7} r={[0.1, 0, -0.5]} c="#ffc34d" />
+      <Crystal p={[-0.22, -0.05, 0.1]} s={0.6} r={[0.2, 0, 0.55]} c={topaz} />
+    </group>
+  );
+}
+
+/** Rusty mine cart heaped with topaz, wheels on the ground at the origin. */
+export function MineCart() {
+  return (
+    <group>
+      <Bx p={[0, 0.32, 0]} s={[0.6, 0.32, 0.4]} c="#6e5a48" />
+      <Bx p={[0, 0.49, 0]} s={[0.64, 0.05, 0.44]} c="#4a4a4a" />
+      {[-0.2, 0.2].map((x) =>
+        [-0.21, 0.21].map((z) => <Cy key={`${x},${z}`} p={[x, 0.13, z]} r={[Math.PI / 2, 0, 0]} s={[0.09, 0.05, 0.09]} c="#2a2a2a" />),
+      )}
+      <Rk p={[-0.13, 0.52, 0.02]} s={0.13} c={TOPAZ} />
+      <Rk p={[0.12, 0.54, -0.04]} s={0.14} c="#ffc34d" />
+      <Rk p={[0.02, 0.6, 0.06]} s={0.1} c="#ffd66b" g />
+    </group>
+  );
+}
