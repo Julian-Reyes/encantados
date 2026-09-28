@@ -12,6 +12,7 @@ import { TYPES } from "../data/types";
 import { calcStats, displayName, expForLevel, maxHp, type Mon } from "../game/mon";
 import { HpBar, MonIcon, Portrait, StatusTag, TypeBadge } from "./common";
 import { useKeys, moveCursor } from "./useKeys";
+import { BADGES, BadgeIcon } from "./Badges";
 import type { L } from "../data/types";
 
 const close = () => G().set({ screen: null });
@@ -593,9 +594,6 @@ export function AlmanaqueScreen() {
 }
 
 // ---------------------------------------------------------------- trainer card
-/** Badge flags in slot order on the trainer card. */
-const BADGE_FLAGS = ["badgeTopaz"];
-
 export function CardScreen() {
   const s = useGame();
   useKeys((b) => {
@@ -633,10 +631,16 @@ export function CardScreen() {
           <span>{tr({ en: "RIVAL", pt: "RIVAL" })}</span>
           <b>{s.rivalName}</b>
         </div>
-        <div className="badges">
-          {Array.from({ length: 8 }, (_, i) => (
-            <span key={i} className={`badge-slot ${BADGE_FLAGS[i] && s.flags[BADGE_FLAGS[i]] ? "earned" : ""}`} />
-          ))}
+        <div className="badge-case">
+          {BADGES.map((b) => {
+            const earned = !!s.flags[b.flag];
+            return (
+              <div key={b.flag} className="badge-slot" title={earned ? tr(b.name) : undefined}>
+                <BadgeIcon badge={b} earned={earned} />
+                <span className="badge-name">{earned ? tr(b.name).replace(/^Insígnia | Badge$/g, "") : "???"}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </ScreenFrame>

@@ -95,7 +95,11 @@ small,.dim { opacity:.75; }
 .dex-detail { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; font-size:17px; }
 .dex-name { font-size:21px; } .dex-lore { font-size:17px; line-height:1.4; margin:4px 0; } .dex-lore.dim { opacity:.6; }
 .card { font-size:19px; } .card-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:2px dashed #cfd8e8; }
-.badges { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; margin-top:12px; } .badge-slot { aspect-ratio:1; border-radius:50%; background:#e3e8f0; border:2px solid #cfd8e8; } .badge-slot.earned { background:radial-gradient(circle at 35% 30%, #fff3c4, #f2b632 55%, #b8801a); border-color:#8a5a10; }
+/* badge case: a velvet-lined box, 4 × 2 like the handheld games' */
+.badge-case { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px 8px; margin-top:14px; padding:14px 12px 10px; border-radius:12px; background:radial-gradient(ellipse at 50% 0%, #34406a, #1b2340 70%); border:4px solid #a8793a; box-shadow:inset 0 3px 8px rgba(0,0,0,.55), 0 2px 0 #6e4c20; }
+.badge-slot { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.badge-icon { width:min(116px,100%); aspect-ratio:1; filter:drop-shadow(0 3px 3px rgba(0,0,0,.6)); }
+.badge-name { font-size:clamp(9px,2.6vw,12px); max-width:100%; overflow-wrap:anywhere; color:#e8d9b0; letter-spacing:.5px; text-transform:uppercase; text-align:center; line-height:1.1; min-height:14px; }
 .option-row { justify-content:space-between; }
 .shop { position:absolute; right:12px; top:12px; z-index:35; width:min(420px,calc(100% - 24px)); padding:10px 14px; }
 .shop-money { text-align:right; font-weight:700; font-size:19px; }

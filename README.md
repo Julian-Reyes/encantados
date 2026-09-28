@@ -33,7 +33,7 @@ Leave your house and head north to meet Professor Jatobá. Choose an amulet at t
 - English/Portuguese options, synthesized music and effects, local saves and mobile controls.
 - Instanced terrain/vegetation, a 1.5 pixel-ratio cap and one 1024-pixel shadow map.
 
-The Arena and the road north of Cidade Ipê are deliberately closed in this version.
+Route 2 north of Cidade Ipê ends at the trail to Serra do Cipó. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan for the rest of the game.
 
 ## Validation
 
