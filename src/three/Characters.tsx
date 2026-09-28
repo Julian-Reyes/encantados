@@ -14,12 +14,13 @@ interface Style {
   shirt: string;
   pants: string;
   shoes?: string;
-  hat?: { color: string; brim?: string; kind: "cap" | "hard" | "nurse" | "back" };
+  hat?: { color: string; brim?: string; kind: "cap" | "hard" | "nurse" | "back" | "straw" };
   coat?: string;
   skirt?: boolean;
   pack?: string;
   beard?: string;
   glasses?: boolean;
+  mask?: string; // bandana over the nose and mouth
 }
 
 const LOOKS: Record<Look, Style> = {
@@ -41,6 +42,10 @@ const LOOKS: Record<Look, Style> = {
   man: { skin: "#d09a70", hair: "#2a1a10", hairStyle: "short", shirt: "#8a4a2a", pants: "#3a3a4a" },
   miner: { skin: "#c68a5a", hair: "#3a2418", hairStyle: "short", shirt: "#8a6a4a", pants: "#4a3a2a", hat: { color: "#a86a2a", kind: "hard" }, pack: "#6a5a4a" },
   leader: { skin: "#d9a57a", hair: "#2a1a10", hairStyle: "spiky", shirt: "#f2b632", pants: "#4a3a2a", coat: "#7a4fa0", beard: "#2a1a10" },
+  bugcatcher: { skin: "#f0c090", hair: "#3a2418", hairStyle: "short", shirt: "#9ad05a", pants: "#6a5a3a", hat: { color: "#e8cf7a", brim: "#c9a94a", kind: "straw" } },
+  // Garimpo Sombrio: miner gear gone wrong, with a dark bandana and helmet.
+  grunt: { skin: "#c68a5a", hair: "#1a1a1a", hairStyle: "short", shirt: "#3a3a42", pants: "#2a2a30", hat: { color: "#2a2a2a", kind: "hard" }, pack: "#5a4a3a", mask: "#7a1f24", shoes: "#1a1a1a" },
+  scientist: { skin: "#f0c8a0", hair: "#6a4a2a", hairStyle: "spiky", shirt: "#d0a040", pants: "#4a4a5a", coat: "#f5f5f5", glasses: true },
 };
 
 function getActor(id?: string): Actor | undefined {
@@ -104,6 +109,7 @@ export function Humanoid({ look, actorId }: { look: Look; actorId?: string }) {
         <Eye p={[0.07, 0.0, 0.16]} s={0.028} />
         {st.glasses && <Bx p={[0, 0.01, 0.19]} s={[0.22, 0.05, 0.01]} c="#222" shadow={false} />}
         {st.beard && <Sph p={[0, -0.1, 0.12]} s={[0.12, 0.07, 0.07]} c={st.beard} />}
+        {st.mask && <Bx p={[0, -0.07, 0.13]} s={[0.3, 0.1, 0.1]} c={st.mask} />}
         <Hair st={st} />
         {st.hat && <Hat hat={st.hat} />}
       </group>
@@ -182,6 +188,13 @@ function Hat({ hat }: { hat: NonNullable<Style["hat"]> }) {
         <group>
           <Sph p={[0, 0.1, 0]} s={[0.22, 0.14, 0.22]} c={hat.color} />
           <Cy p={[0, 0.06, 0]} s={[0.26, 0.02, 0.26]} c={hat.color} />
+        </group>
+      );
+    case "straw":
+      return (
+        <group>
+          <Sph p={[0, 0.12, 0]} s={[0.18, 0.12, 0.18]} c={hat.color} />
+          <Cy p={[0, 0.08, 0]} s={[0.36, 0.02, 0.36]} c={hat.brim ?? hat.color} />
         </group>
       );
     case "nurse":

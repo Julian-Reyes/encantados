@@ -355,6 +355,31 @@ const TRACKS: Record<string, Track> = {
     bass: bounce("C2", "F1", "G1", "C2", "A1", "F1", "G1", "C2"),
     drums: "k . h . s . h . k . h . s . h . ".repeat(8),
   },
+  // Gruta da Lapinha: slow and echoing, D minor.
+  cave: {
+    bpm: 116,
+    leadDuty: 0.25,
+    harmonyDuty: 0.125,
+    lead: bars(
+      "D5 . F5 . A5:2 G5 F5", "E5:4 C5:2 D5 E5", "F5 . A5 . C6:2 A#5 A5", "G5:4 .:4",
+      "D5 . F5 . A5:2 G5 F5", "E5:4 A4:2 C#5 E5", "D5:2 F5:2 E5:2 C#5:2", "D5:4 .:4",
+      "A5:2 . A5 A#5:2 A5 G5", "F5:4 D5:4", "G5:2 . G5 A5:2 G5 F5", "E5:4 C#5:4",
+      "D5 F5 A5 D6 C6:2 A#5 A5", "G5:2 A#5:2 A5:2 E5:2", "F5:2 E5:2 D5:2 C#5:2", "D5:4 .:4",
+    ),
+    harmony: bars(
+      "A4:8", "G4:8", "C5:8", "A#4:4 A4:4",
+      "A4:8", "C#5:8", "A4:4 G4:4", "F4:4 .:4",
+      "F5:8", "A4:8", "E5:8", "A4:8",
+      "A4:8", "D5:4 C#5:4", "A4:4 G4:4", "F4:4 .:4",
+    ),
+    bass: bars(
+      "D3 . A2 . D3 . A2 .", "C3 . G2 . C3 . G2 .", "A#2 . F2 . A#2 . F2 .", "C3 . G2 . C3 . E3 .",
+      "D3 . A2 . D3 . A2 .", "A2 . E3 . A2 . E3 .", "A#2 . F3 . A2 . E3 .", "D3 . A2 . D3 . . .",
+      "D3 . A2 . D3 . A2 .", "A#2 . F2 . A#2 . F2 .", "C3 . G2 . C3 . G2 .", "A2 . E3 . A2 . C#3 .",
+      "D3 . A2 . D3 . A2 .", "G2 . D3 . A2 . E3 .", "A#2 . F2 . A2 . E3 .", "D3 . A2 . D3 . . .",
+    ),
+    drums: bars(...Array(16).fill("k . . . . . h .")),
+  },
   lab: {
     bpm: 100,
     lead:

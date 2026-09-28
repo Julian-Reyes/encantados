@@ -15,7 +15,7 @@ The plan for the full game: 8 gyms, a villain team, the Elite Four and a Champio
 | # | Kanto beat | Stage | Gym / event | Levels |
 |---|---|---|---|---|
 | 1 ✓ | Pallet → Viridian → Pewter | **MG**: Vila Pequi, Route 1, Cidade Ipê, Route 2 | **Topázio** (Rock), Topaz Badge | 12/14 |
-| 2 | Mt. Moon → Cerulean | **MG**: Route 3 → **Gruta da Lapinha** (fossils) → **Serra do Cipó** (waterfalls) | **Marina** (Water), Aquamarine Badge | 18/21 |
+| 2 ◐ | Mt. Moon → Cerulean | **MG**: Route 3 ✓ → **Gruta da Lapinha** (fossils) ✓ → **Serra do Cipó** (waterfalls) | **Marina** (Water), Aquamarine Badge | 18/21 |
 | 3 | Nugget Bridge, Bill → Vermilion, S.S. Anne | Ponte do Cipó, Seu Bento's cabin → Caminho Novo → **Rio de Janeiro (RJ)**, the port, with the cruise ship *Navio Guanabara* | **Turmalina** (Electric; tourmaline is piezo-electric), Tourmaline Badge | 21/24 |
 | 4 | Rock Tunnel → Lavender | **Túnel da Serra do Mar** (dark, needs Flash) → **Paraty (RJ)**, a colonial town with a haunted church bell tower. No gym | — | ~25 |
 | 5 | Celadon | Serra Verde train → **Curitiba (PR)**: the Jardim Botânico greenhouse is the gym, plus a dept. store and a Fliperama hiding the villains' base. The **Itaipu** dam nearby is the Power Plant | **Esmeralda** (Grass), Emerald Badge | 24–29 |
@@ -31,7 +31,7 @@ Illegal prospectors who poach creatures and strip land for gems and gold. Illega
 
 | Where | Team Rocket beat | What happens |
 |---|---|---|
-| Gruta da Lapinha | Mt. Moon | Grunts dig up and steal fossils |
+| Gruta da Lapinha ✓ | Mt. Moon | Grunts dig up and steal fossils |
 | Ponte do Cipó | Nugget Bridge | A recruiter after the bridge trainers |
 | Seu Bento's route | Cerulean house robbery | They rob a house; you get back a stolen item |
 | Curitiba Fliperama | Game Corner hideout | First fight with the (masked) boss; you get the **Lente Espectral** (Silph Scope) |
@@ -70,11 +70,11 @@ Field moves work like HMs (in Portuguese, *MO*). You teach them to a creature, a
 
 ## Types and species
 
-**Types.** Add the 7 remaining Gen-1 types: **Ice, Fighting, Poison, Ground, Psychic, Ghost** and **Dragon**. With the existing Dark type that makes 16. The chart in `src/data/types.ts` gets the Gen-2 values.
+**Types.** Add the 7 remaining Gen-1 types: **Ice, Fighting, Poison, Ground, Psychic, Ghost** and **Dragon**. With the existing Dark type that makes 16. The chart in `src/data/types.ts` gets the Gen-2 values. Poison and Ground are done (0× immunities are handled in battle); Ice, Fighting, Psychic, Ghost and Dragon are left.
 
 **Species.** The target is about 75 in total, up from 18. They're introduced by region so each area feels local:
 
-- **Minas caves:** Zubat → **Morceguinho** (Poison/Flying). The Lapinha fossils are a giant ground sloth (Rock/Ground) and a saber-tooth cat (Rock/Dark), both found at Lagoa Santa.
+- **Minas caves:** Zubat → **Morceguinho** → **Morcegão** (Poison/Flying) ✓. Clefairy → **Luazinha** (Normal) ✓, which will evolve with a Pedra da Lua once evolution by item exists. The Lapinha fossils are a giant ground sloth (Rock/Ground) and a saber-tooth cat (Rock/Dark), both found at Lagoa Santa. The **Claw Fossil** and **Fang Fossil** key items are in; their species come with the Noronha fossil lab.
 - **Rivers:** Magikarp → Gyarados becomes **Piabinha → Pirarucão**. Voltorb becomes **Poraquê**, the electric eel.
 - **Rio and the coast:** Diglett → **Tatuzinho** (the three-banded armadillo, Ground); Mankey → **Macaco-prego** (the capuchin, Fighting); plus gulls.
 - **Paraná:** Pineco → **Pinhãozinho** (the araucária pine cone). Eevee → **Saguizinho**, a gift that evolves with the gems.
@@ -114,8 +114,8 @@ These are needed by every stage.
    - Generalise it to named outdoor regions joined by edges or by scripted travel (ship, train, highway).
    - Keep `"overworld"` as the id for the current region so existing saves stay valid.
    - Each region should be able to have its own look: palette, water, beach sand, araucárias, cerrado.
-2. **Encounter tables per map or zone,** replacing the y-based `encounterTable(y)` in `src/world/maps.ts`.
-3. **Cave maps** with wild encounters, ladders between floors, and darkness until Flash is used. `tileAt` and `isWalkableTile` in `maps.ts` and `runtime.ts` need to support them.
+2. **Encounter tables per map or zone.** Partly done: `encounterTable(map, y)` in `src/world/maps.ts` picks by map, and still by y on the overworld strip.
+3. **Cave maps.** Done except darkness: interiors with `cave: true` get cave tiles, encounters on open floor, and ladders/holes paired in `CAVE_LINKS`. Darkness until Flash (Lampião) is still to do, for the Túnel da Serra do Mar.
 4. **Raise `MAX_LEVEL` from 50 to 100** in `src/game/mon.ts`, to allow Kanto's level curve.
 5. **Later systems:**
    - field moves;
@@ -128,16 +128,17 @@ These are needed by every stage.
 
    The badge case already exists (`BADGE_FLAGS` in `src/ui/Menu.tsx`).
 
-## Stage 2 in detail (next up, still in Minas)
+## Stage 2 in detail (in progress, still in Minas)
 
-**Route 3** continues north from where Route 2 ends. The worker blocking the trail (`worker2` at 15,-34) is removed.
-- Trainers: a Bug Catcher, a Lass and a Youngster, levels 12–15.
-- Wild: Morceguinho, Pardalito, Chispito and Lagartix, levels 11–14.
+**Route 3** ✓ continues north from where Route 2 ends (y -72 to -37), with a Healing Center at the cave mouth.
+- Trainers: Bug Catcher Juca, Lass Lia and Youngster Nando, levels 12–14.
+- Wild: Morceguinho, Pardalito, Chispito, Lagartix and Borbolux, levels 11–14.
 
-**Gruta da Lapinha** (Mt. Moon) has two floors plus a lower level.
-- Wild: Morceguinho, Pedrudo, and a new creature in Clefairy's role, levels 10–14.
-- Three Garimpo Sombrio grunts (levels 12–16), and a scientist in the Super Nerd's role.
-- At the end you choose one of the two fossils.
+**Gruta da Lapinha** ✓ (Mt. Moon): 1F, B1F in two halves, and B2F.
+- Wild: Morceguinho, Pedrudo and Luazinha, levels 10–14.
+- Three Garimpo Sombrio grunts (levels 13–16), Caver Beto, and Scientist Otávio in the Super Nerd's role.
+- On B2F you choose the Claw or Fang Fossil after beating Otávio.
+- The north exit on B1F is blocked by a rockslide, with a worker in front of it (`worker3`). Remove both when Serra do Cipó is built; the exit then leads there.
 
 **Serra do Cipó** (Cerulean) has a Healing Center, a shop, and a waterfall. The rival battles you at the north exit.
 - **Water gym:** the puzzle is stepping stones and currents across waterfall pools.

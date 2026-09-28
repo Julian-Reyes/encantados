@@ -33,7 +33,10 @@ export type MoveId =
   | "defensecurl" | "rockthrow" | "rockslide"
   | "sparkjolt" | "thunderwave" | "spark"
   | "peck" | "hypnosis" | "nightshade" | "shadowclaw"
-  | "poisonsting";
+  | "poisonsting" | "poisonfang"
+  | "leechlife" | "screech"
+  | "mudslap" | "tremor"
+  | "lullaby" | "moonglow";
 
 export const MOVES: Record<MoveId, Move> = {
   tackle: { name: { en: "Tackle", pt: "Investida" }, type: "normal", cat: "physical", power: 40, acc: 100, pp: 35, desc: { en: "A full-body charge.", pt: "Um ataque com o corpo todo." } },
@@ -80,5 +83,15 @@ export const MOVES: Record<MoveId, Move> = {
   nightshade: { name: { en: "Night Veil", pt: "Véu Noturno" }, type: "dark", cat: "special", power: 1, acc: 100, pp: 15, effect: { kind: "fixedLevel" }, desc: { en: "Damage equals the user's level.", pt: "Dano igual ao nível do usuário." } },
   shadowclaw: { name: { en: "Dusk Talon", pt: "Garra do Crepúsculo" }, type: "dark", cat: "physical", power: 70, acc: 100, pp: 15, highCrit: true, desc: { en: "High critical-hit ratio.", pt: "Alta chance de crítico." } },
 
-  poisonsting: { name: { en: "Sting", pt: "Ferroada" }, type: "bug", cat: "physical", power: 15, acc: 100, pp: 35, effect: { kind: "status", status: "psn", chance: 30 }, desc: { en: "May poison the foe.", pt: "Pode envenenar o alvo." } },
+  poisonsting: { name: { en: "Sting", pt: "Ferroada" }, type: "poison", cat: "physical", power: 15, acc: 100, pp: 35, effect: { kind: "status", status: "psn", chance: 30 }, desc: { en: "May poison the foe.", pt: "Pode envenenar o alvo." } },
+  poisonfang: { name: { en: "Venom Fang", pt: "Presa Venenosa" }, type: "poison", cat: "physical", power: 50, acc: 100, pp: 15, effect: { kind: "status", status: "psn", chance: 30 }, desc: { en: "Toxic fangs. May poison.", pt: "Presas tóxicas. Pode envenenar." } },
+
+  leechlife: { name: { en: "Blood Sip", pt: "Chupa-Sangue" }, type: "bug", cat: "physical", power: 20, acc: 100, pp: 15, effect: { kind: "drain" }, desc: { en: "Restores half the damage dealt.", pt: "Recupera metade do dano causado." } },
+  screech: { name: { en: "Cave Screech", pt: "Guincho" }, type: "normal", cat: "status", power: 0, acc: 85, pp: 40, effect: { kind: "stat", target: "foe", stat: "def", stages: -2 }, desc: { en: "Sharply lowers the foe's Defense.", pt: "Reduz muito a Defesa do alvo." } },
+
+  mudslap: { name: { en: "Mud Slap", pt: "Tapa de Lama" }, type: "ground", cat: "special", power: 20, acc: 100, pp: 10, effect: { kind: "stat", target: "foe", stat: "acc", stages: -1 }, desc: { en: "Lowers the foe's accuracy.", pt: "Reduz a precisão do alvo." } },
+  tremor: { name: { en: "Tremor", pt: "Tremor" }, type: "ground", cat: "physical", power: 70, acc: 100, pp: 15, desc: { en: "Shakes the ground under the foe.", pt: "Sacode o chão sob o alvo." } },
+
+  lullaby: { name: { en: "Lullaby", pt: "Cantiga de Ninar" }, type: "normal", cat: "status", power: 0, acc: 55, pp: 15, effect: { kind: "status", status: "slp" }, desc: { en: "Sings the foe to sleep.", pt: "Canta até o alvo dormir." } },
+  moonglow: { name: { en: "Moonglow", pt: "Luar" }, type: "normal", cat: "special", power: 60, acc: 100, pp: 15, desc: { en: "A soft beam of moonlight.", pt: "Um raio suave de luar." } },
 };

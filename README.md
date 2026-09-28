@@ -1,6 +1,6 @@
 # Encantados
 
-A browser creature-collecting RPG built with React, TypeScript, React Three Fiber and procedural low-poly models. Explore Vila Pequi, Route 1 and Cidade Ipê, choose a starter, battle trainers, and fill the bilingual Almanaque.
+A browser creature-collecting RPG built with React, TypeScript, React Three Fiber and procedural low-poly models. Explore Vila Pequi, Cidade Ipê, Routes 1–3 and the Gruta da Lapinha caves, choose a starter, battle trainers, and fill the bilingual Almanaque.
 
 ```sh
 npm install
@@ -27,16 +27,17 @@ Leave your house and head north to meet Professor Jatobá. Choose an amulet at t
 
 ## Included
 
-- Three starters, six other base species, and nine evolutions; 18 Almanaque entries.
+- Three starters, eight other base species, and ten evolutions; 21 Almanaque entries.
 - Turn-based battles, elemental effectiveness, statuses, catching, nicknames, experience, move learning and cancellable evolution.
-- A rival and two other trainers, shops, healing items, storage, signs, dialogue and pickups.
+- A rival, route trainers, the Garimpo Sombrio grunts, Arena Leader Topázio, shops, healing items, storage, signs, dialogue and pickups.
+- A three-floor cave with ladders, cave encounters and a fossil to choose.
 - English/Portuguese options, synthesized music and effects, local saves and mobile controls.
 - Instanced terrain/vegetation, a 1.5 pixel-ratio cap and one 1024-pixel shadow map.
 
-Route 2 north of Cidade Ipê ends at the trail to Serra do Cipó. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan for the rest of the game.
+Route 3 climbs from Route 2 to the Gruta da Lapinha. The tunnel out of the cave to Serra do Cipó is still blocked by a rockslide. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan for the rest of the game.
 
 ## Validation
 
-Automated checks cover dialogue sequencing, battle entry, exhausted parties, trainer rewards, catching into storage, leveling and save/load. Browser checks use the production HTML in headless Chrome; this does not establish performance on a 2017 MacBook Pro or audio quality on physical speakers.
+Automated checks cover dialogue sequencing, battle entry, exhausted parties, trainer rewards, catching into storage, leveling, save/load, type immunities, species data, and map data (everyone stands somewhere walkable, every cave ladder is paired and the whole cave can be reached). Browser checks use the production HTML in headless Chrome; this does not establish performance on a 2017 MacBook Pro or audio quality on physical speakers.
 
 Pixelify Sans and Press Start 2P are bundled under the SIL Open Font License. Notices are in `src/assets/fonts` and embedded in the generated HTML.

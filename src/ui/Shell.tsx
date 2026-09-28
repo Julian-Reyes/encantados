@@ -107,6 +107,8 @@ export function Title() {
 function areaName(): string {
   if (rt.map === "overworld") {
     const y = rt.player.y;
+    if (y < -36) return tr({ en: "ROUTE 3", pt: "ROTA 3" });
+    if (y < 0) return tr({ en: "ROUTE 2", pt: "ROTA 2" });
     if (y < 18) return "CIDADE IPÊ";
     if (y <= 55) return tr({ en: "ROUTE 1", pt: "ROTA 1" });
     return "VILA PEQUI";
@@ -120,6 +122,10 @@ function areaName(): string {
     mart1: { en: "SHOP", pt: "LOJA" },
     mart2: { en: "SHOP", pt: "LOJA" },
     arena1: { en: "CIDADE IPÊ ARENA", pt: "ARENA DE CIDADE IPÊ" },
+    center3: { en: "HEALING CENTER", pt: "CENTRO DE CURA" },
+    lapinha1: { en: "GRUTA DA LAPINHA 1F", pt: "GRUTA DA LAPINHA 1º" },
+    lapinha2: { en: "GRUTA DA LAPINHA B1F", pt: "GRUTA DA LAPINHA S1" },
+    lapinha3: { en: "GRUTA DA LAPINHA B2F", pt: "GRUTA DA LAPINHA S2" },
   };
   return tr(names[rt.map]).toUpperCase();
 }

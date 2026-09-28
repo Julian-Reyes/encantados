@@ -10,8 +10,9 @@ import { SPECIES, STARTERS, type SpeciesId } from "../data/species";
 import { ITEMS } from "../data/items";
 import { TYPES, type L } from "../data/types";
 import {
-  NPCS, encounterTable, tileAt, type Building, type NpcDef,
+  NPCS, caveLink, encounterTable, isCave, tileAt, type Building, type NpcDef,
 } from "./maps";
+import type { ItemId } from "../data/items";
 import {
   rt, actor, blocked, dirVec, exclaim, exteriorExit, face, faceToward, fadeIn, fadeOut, interiorEntry, itemAt,
   loadMap, mapMusic, npcAt, npcDefsFor, refreshNpcVisibility, runScript, signAt, walk, warp, wait,
@@ -85,6 +86,11 @@ export function onStepEnd(): boolean {
     void runScript(rivalRoute);
     return true;
   }
+  const link = caveLink(map, p.x, p.y);
+  if (link) {
+    void runScript(() => warp(link.map, link.x, link.y, p.facing));
+    return true;
+  }
   for (const def of npcDefsFor(map)) {
     if (!def.trainer || flag("beat_" + def.id)) continue;
     const a = rt.npcs.get(def.id);
@@ -93,7 +99,10 @@ export function onStepEnd(): boolean {
       return true;
     }
   }
-  if (map === "overworld" && tileAt(map, p.x, p.y) === '"' && G().party.some((m) => m.hp > 0) && Math.random() < 0.1) {
+  // Tall grass outdoors; any open floor in a cave (at a lower rate, like the handhelds).
+  const tile = tileAt(map, p.x, p.y);
+  const rate = map === "overworld" ? (tile === '"' ? 0.1 : 0) : isCave(map) && tile === "." ? 0.07 : 0;
+  if (rate && G().party.some((m) => m.hp > 0) && Math.random() < rate) {
     void runScript(wildEncounter);
     return true;
   }
@@ -123,7 +132,7 @@ async function afterBattle(r: BattleResult) {
 }
 
 async function wildEncounter() {
-  const table = encounterTable(rt.player.y);
+  const table = encounterTable(rt.map, rt.player.y);
   const total = table.reduce((s, e) => s + e.weight, 0);
   let roll = Math.random() * total;
   let slot = table[0];
@@ -337,6 +346,47 @@ async function rivalRoute() {
   refreshNpcVisibility();
 }
 
+// Two fossils on B2F of the Gruta da Lapinha: beat the scientist, then take one; he keeps the other.
+const FOSSILS: Record<number, { item: ItemId; what: L }> = {
+  2: { item: "fossilgarra", what: { en: "the Claw Fossil: the claw of a giant ground sloth", pt: "o Fóssil de Garra: a garra de uma preguiça-gigante" } },
+  4: { item: "fossilpresa", what: { en: "the Fang Fossil: the fang of a saber-toothed cat", pt: "o Fóssil de Presa: a presa de um tigre-dentes-de-sabre" } },
+};
+
+async function fossil(x: number) {
+  const f = FOSSILS[x];
+  if (!f) return;
+  if (flag("fossilTaken")) {
+    await say({ en: "Only dust and scratch marks are left.", pt: "Só sobrou poeira e marcas de arranhão." });
+    return;
+  }
+  const nerd = NPCS.find((n) => n.id === "lapNerd")!;
+  if (!flag("beat_lapNerd")) {
+    faceToward("lapNerd", rt.player.x, rt.player.y);
+    await exclaim("lapNerd");
+    await trainerBattle(nerd, false);
+    return;
+  }
+  if (!(await yesno(tr({ en: "It's {f}. Take it?", pt: "É {f}. Pegar?" }, { f: tr(f.what) })))) return;
+  addItem(f.item);
+  setFlag("fossilTaken");
+  void jingle("item");
+  await say(tr({ en: "{player} got the {i}!", pt: "{player} pegou o {i}!" }, { i: tr(ITEMS[f.item].name) }));
+  const other = FOSSILS[x === 2 ? 4 : 2].item;
+  faceToward("lapNerd", rt.player.x, rt.player.y);
+  await speak(nerd.trainer!.name,
+    tr({ en: "Then the {i} is mine!", pt: "Então o {i} fica comigo!" }, { i: tr(ITEMS[other].name) }),
+    { en: "Nobody can bring these back to life yet. They say a lab out on the islands is working on it. Take good care of yours!", pt: "Ninguém consegue revivê-los ainda. Dizem que um laboratório lá nas ilhas está tentando. Cuide bem do seu!" },
+  );
+}
+
+const CAVE_THINGS: Record<string, L> = {
+  o: { en: "A limestone boulder. Water has carved grooves into it over thousands of years.", pt: "Uma rocha de calcário. A água cavou sulcos nela ao longo de milhares de anos." },
+  "*": { en: "Calcite crystals glitter in the lamplight.", pt: "Cristais de calcita brilham à luz do lampião." },
+  X: { en: "Fallen rocks block the tunnel north.", pt: "Pedras caídas bloqueiam o túnel para o norte." },
+  H: { en: "A hole leads down into the dark.", pt: "Um buraco leva para baixo, no escuro." },
+  U: { en: "A ladder leads back up.", pt: "Uma escada leva de volta para cima." },
+};
+
 // ---------------------------------------------------------------- NPC scripts
 const NPC_SCRIPTS: Record<string, (def: NpcDef) => Promise<void>> = {
   async mom() {
@@ -496,6 +546,12 @@ export function onInteract(x: number, y: number) {
     });
   }
   const t = tileAt(rt.map, x, y);
+  if (isCave(rt.map)) {
+    if (t === "Z") return void runScript(() => fossil(x));
+    const c = CAVE_THINGS[t];
+    if (c) return void runScript(() => say(c));
+    return;
+  }
   if (rt.map === "lab" && t === "a") return void runScript(() => starterTable(x));
   if (t === "c") {
     // Talk across the counter.

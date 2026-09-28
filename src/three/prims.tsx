@@ -95,11 +95,11 @@ export function Crystal({ p, s, r = [0, 0, 0], c, tip }: { p: V3; s: number; r?:
   );
 }
 
-export function CrystalCluster({ p, s, topaz = TOPAZ, tip }: { p: V3; s: number; topaz?: string; tip?: boolean }) {
+export function CrystalCluster({ p, s, topaz = TOPAZ, accent = "#ffc34d", tip }: { p: V3; s: number; topaz?: string; accent?: string; tip?: boolean }) {
   return (
     <group position={p} scale={s}>
       <Crystal p={[0, 0, 0]} s={1} c={topaz} tip={tip} />
-      <Crystal p={[0.25, -0.05, 0.05]} s={0.7} r={[0.1, 0, -0.5]} c="#ffc34d" />
+      <Crystal p={[0.25, -0.05, 0.05]} s={0.7} r={[0.1, 0, -0.5]} c={accent} />
       <Crystal p={[-0.22, -0.05, 0.1]} s={0.6} r={[0.2, 0, 0.55]} c={topaz} />
     </group>
   );

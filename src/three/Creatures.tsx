@@ -513,12 +513,90 @@ function Rasgamorte() {
   );
 }
 
+// ---------------------------------------------------------------- Gruta da Lapinha
+/** Eyeless cave bat: big ears, tiny fangs, leathery wings. `big` is the evolved form with the huge mouth. */
+function CaveBat({ big }: { big: boolean }) {
+  const ref = useRef<THREE.Group>(null);
+  const k = big ? 1.45 : 1;
+  const body = big ? "#3f5aa8" : "#5a78c8";
+  const wing = big ? "#6a3f8a" : "#8a5ab8";
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.position.y = (big ? 0.35 : 0.3) + Math.sin(clock.elapsedTime * 4) * 0.07;
+  });
+  return (
+    <group ref={ref} scale={k}>
+      <Sph p={[0, 0.42, 0]} s={[0.2, 0.22, 0.18]} c={body} />
+      {big ? (
+        <group>
+          <Sph p={[0, 0.38, 0.12]} s={[0.15, 0.14, 0.08]} c="#7a1f3a" />
+          <Sph p={[0, 0.36, 0.14]} s={[0.1, 0.09, 0.06]} c="#c2405a" />
+          {[-1, 1].map((sd) => (
+            <Cn key={sd} p={[sd * 0.07, 0.48, 0.17]} s={[0.025, 0.06, 0.025]} r={[3.14, 0, 0]} c="#ffffff" />
+          ))}
+        </group>
+      ) : (
+        <group>
+          <Bx p={[0, 0.38, 0.17]} s={[0.1, 0.018, 0.02]} c="#2a2440" shadow={false} />
+          {[-1, 1].map((sd) => (
+            <Cn key={sd} p={[sd * 0.035, 0.355, 0.175]} s={[0.018, 0.04, 0.018]} r={[3.14, 0, 0]} c="#ffffff" />
+          ))}
+        </group>
+      )}
+      {[-1, 1].map((sd) => (
+        <group key={sd}>
+          <Cn p={[sd * 0.11, 0.66, -0.01]} s={[0.07, 0.2, 0.05]} r={[0, 0, sd * -0.35]} c={body} />
+          <Cn p={[sd * 0.11, 0.65, 0.02]} s={[0.04, 0.13, 0.02]} r={[0, 0, sd * -0.35]} c="#e8a0c0" />
+          <Wing p={[sd * 0.16, 0.46, -0.02]} side={sd as 1 | -1} flap={big ? 6 : 10}>
+            <Cy p={[sd * 0.22, 0.02, 0]} s={[0.018, 0.44, 0.018]} r={[0, 0, sd * 1.25]} c={body} />
+            <Sph p={[sd * 0.24, -0.06, 0]} s={[0.24, 0.13, 0.02]} c={wing} />
+            <Sph p={[sd * 0.3, -0.12, 0]} s={[0.14, 0.1, 0.02]} c={wing} />
+          </Wing>
+          <Cy p={[sd * 0.07, 0.17, 0]} s={[0.02, 0.1, 0.02]} c={body} />
+        </group>
+      ))}
+    </group>
+  );
+}
+const Morceguinho = () => <CaveBat big={false} />;
+const Morcegao = () => <CaveBat big />;
+
+function Luazinha() {
+  const pk = "#f3c6d8";
+  return (
+    <group>
+      <Sph p={[0, 0.3, 0]} s={[0.24, 0.26, 0.22]} c={pk} />
+      <Sph p={[0, 0.62, 0.02]} s={[0.23, 0.21, 0.21]} c={pk} />
+      <Eye p={[-0.085, 0.65, 0.18]} s={0.05} c="#3a2440" white />
+      <Eye p={[0.085, 0.65, 0.18]} s={0.05} c="#3a2440" white />
+      <Bx p={[0, 0.56, 0.21]} s={[0.05, 0.012, 0.02]} c="#a0506a" shadow={false} />
+      <Sph p={[-0.15, 0.57, 0.14]} s={[0.04, 0.03, 0.02]} r={[0, -0.6, 0]} c="#ff8aa8" shadow={false} />
+      <Sph p={[0.15, 0.57, 0.14]} s={[0.04, 0.03, 0.02]} r={[0, 0.6, 0]} c="#ff8aa8" shadow={false} />
+      {/* crescent moon on the forehead: a gold disc with a pink one biting into it */}
+      <SphHi p={[0, 0.83, 0.07]} s={[0.07, 0.07, 0.03]} c="#ffd75a" g />
+      <SphHi p={[0.035, 0.85, 0.09]} s={[0.058, 0.058, 0.03]} c={pk} />
+      {[-1, 1].map((sd) => (
+        <group key={sd}>
+          <Cn p={[sd * 0.16, 0.8, -0.02]} s={[0.06, 0.14, 0.04]} r={[0, 0, sd * -0.5]} c={pk} />
+          <Cn p={[sd * 0.18, 0.86, -0.02]} s={[0.03, 0.06, 0.02]} r={[0, 0, sd * -0.5]} c="#6a4a5a" />
+          <Sph p={[sd * 0.22, 0.34, 0.08]} s={[0.05, 0.1, 0.05]} r={[0.4, 0, sd * -0.6]} c={pk} />
+          <Sph p={[sd * 0.1, 0.05, 0.04]} s={[0.07, 0.05, 0.09]} c={pk} />
+          <Wing p={[sd * 0.1, 0.38, -0.18]} side={sd as 1 | -1} flap={3}>
+            <Sph p={[sd * 0.08, 0.04, 0]} s={[0.1, 0.07, 0.015]} r={[0, 0, sd * 0.5]} c="#fff0f6" />
+          </Wing>
+        </group>
+      ))}
+      <Tor p={[0, 0.2, -0.24]} s={0.05} r={[0, 1.57, 0]} c={pk} />
+    </group>
+  );
+}
+
 const MODELS: Record<SpeciesId, () => JSX.Element> = {
   fagulho: Fagulho, labaredo: Labaredo, bolhuga: Bolhuga, cascabolha: Cascabolha,
   brotapo: Brotapo, floresapo: Floresapo, pardalito: Pardalito, gavionte: Gavionte,
   ratico: Ratico, ratazao: Ratazao, lagartix: Lagartix, borbolux: Borbolux,
   pedrudo: Pedrudo, rochedao: Rochedao, chispito: Chispito, chispao: Chispao,
   corujita: Corujita, rasgamorte: Rasgamorte,
+  morceguinho: Morceguinho, morcegao: Morcegao, luazinha: Luazinha,
 };
 
 /** A creature with a gentle idle bounce. */

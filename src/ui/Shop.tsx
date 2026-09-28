@@ -21,7 +21,7 @@ export function ShopScreen() {
   const [cursor, setCursor] = useState(0);
   const [qty, setQty] = useState<{ id: ItemId; n: number } | null>(null);
   const stock = kind === "city" ? SHOP_CITY : SHOP_TOWN;
-  const sellList = (Object.keys(bag) as ItemId[]).filter((id) => (bag[id] ?? 0) > 0);
+  const sellList = (Object.keys(bag) as ItemId[]).filter((id) => (bag[id] ?? 0) > 0 && ITEMS[id].pocket !== "key");
   const list = mode === "buy" ? stock : sellList;
   const active = screen === "shop" && !dialog;
 

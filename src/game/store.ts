@@ -6,7 +6,9 @@ import type { L } from "../data/types";
 
 export type Lang = "en" | "pt";
 export type Dir = "up" | "down" | "left" | "right";
-export type MapId = "overworld" | "home" | "rivalhouse" | "lab" | "center1" | "mart1" | "center2" | "mart2" | "arena1";
+export type MapId =
+  | "overworld" | "home" | "rivalhouse" | "lab" | "center1" | "mart1" | "center2" | "mart2" | "arena1"
+  | "center3" | "lapinha1" | "lapinha2" | "lapinha3";
 
 export interface Spot {
   map: MapId;

@@ -1,12 +1,13 @@
 // All map data. Tile (x, y): x grows east, y grows south. In 3D a tile sits at (x, 0, y),
 // so north is -z and the camera looks north from the south, like the handhelds.
-// Route 2 was added north of Cidade Ipê at negative y, so older coordinates (and saves) stay valid.
+// Routes 2 and 3 were added north of Cidade Ipê at negative y, so older coordinates (and saves) stay valid.
 //
 // Overworld tile chars:
 //   .  short grass       ,  dirt path       "  tall grass (encounters)   f  flowers
 //   s  plaza stone       =  bridge          ~  water                     T  tree
 //   L  ledge (hop south) r  boulder         O  fountain                  F  fence
-//   Building footprints use one letter per building (door = bottom row, middle column).
+//   Building footprints use one letter per building (door = bottom row, middle column);
+//   the Gruta da Lapinha's cave mouth is one too (V).
 
 import type { Dir, MapId } from "../game/store";
 import type { SpeciesId } from "../data/species";
@@ -15,7 +16,7 @@ import type { L } from "../data/types";
 
 export const OW_W = 32;
 /** Northmost overworld row (inclusive); rows run from OW_Y0 to OW_H - 1. */
-export const OW_Y0 = -36;
+export const OW_Y0 = -72;
 export const OW_H = 76;
 
 function buildOverworld(): string[][] {
@@ -28,6 +29,46 @@ function buildOverworld(): string[][] {
   // Side borders
   fill(0, OW_Y0, 1, OW_H - 1, "T");
   fill(OW_W - 2, OW_Y0, OW_W - 1, OW_H - 1, "T");
+
+  // ---------- ROUTE 3 (y -72..-37, north of Route 2) ----------
+  // Cerrado hills climbing to the Gruta da Lapinha, with a Healing Center at the cave mouth.
+  fill(0, -72, OW_W - 1, -72, "T");
+  // Southern fields: the road runs straight up from Route 2.
+  fill(15, -46, 16, -37, ",");
+  fill(3, -44, 12, -39, '"');
+  fill(19, -45, 28, -40, '"');
+  put([[3, -38], [8, -38], [12, -37], [19, -38], [23, -37], [28, -38], [7, -45], [11, -45], [23, -46], [4, -46], [27, -46]], "T");
+  put([[13, -44], [18, -41], [20, -46], [9, -46], [13, -39]], "r");
+  put([[5, -38], [10, -37], [21, -38], [26, -38], [18, -44]], "f");
+  fill(2, -47, 13, -47, "L");
+  fill(18, -47, 29, -47, "L");
+  fill(14, -47, 17, -47, ",");
+  // Middle: the road swings west around a big patch of grass.
+  fill(7, -49, 16, -48, ",");
+  fill(7, -56, 8, -50, ",");
+  fill(11, -56, 27, -50, '"');
+  fill(2, -56, 4, -49, "T");
+  put([[10, -50], [10, -54], [28, -52], [18, -48], [22, -49], [27, -48], [9, -57], [5, -52]], "r");
+  put([[5, -50], [6, -55], [20, -48], [25, -49], [13, -48]], "f");
+  put([[11, -57], [14, -57], [21, -57], [26, -57], [29, -55], [29, -50]], "T");
+  // Upper fields: back to the middle of the valley.
+  fill(7, -58, 16, -57, ",");
+  fill(15, -64, 16, -59, ",");
+  fill(3, -63, 12, -60, '"');
+  fill(19, -63, 26, -59, '"');
+  put([[3, -59], [6, -58], [12, -59], [27, -60], [28, -63], [18, -58], [13, -63]], "T");
+  put([[2, -64], [4, -58], [17, -62], [27, -58], [21, -64]], "r");
+  put([[8, -59], [18, -60], [24, -58], [5, -64]], "f");
+  // The cave mouth in the hillside, and the Healing Center beside it.
+  fill(4, -69, 8, -66, "Q");
+  fill(12, -71, 19, -67, "V");
+  fill(6, -65, 16, -65, ",");
+  fill(15, -66, 16, -66, ",");
+  fill(2, -71, 11, -70, "T");
+  fill(20, -71, 29, -70, "T");
+  put([[2, -69], [2, -66], [10, -68], [11, -66], [20, -68], [21, -66], [25, -67], [28, -65]], "r");
+  put([[9, -66], [22, -69], [29, -68], [26, -64], [3, -65]], "T");
+  put([[10, -69], [23, -66], [27, -69], [9, -64]], "f");
 
   // ---------- ROUTE 2 (y -36..-1, north of Cidade Ipê) ----------
   fill(0, -36, OW_W - 1, -35, "T");
@@ -154,7 +195,7 @@ export function owTile(x: number, y: number): string {
 }
 
 // ---------- Buildings ----------
-export type BuildingKind = "home" | "rivalhouse" | "lab" | "center" | "mart" | "church" | "arena" | "house";
+export type BuildingKind = "home" | "rivalhouse" | "lab" | "center" | "mart" | "church" | "arena" | "house" | "cave";
 export interface Building {
   letter: string;
   kind: BuildingKind;
@@ -178,6 +219,8 @@ const B_INFO: Record<string, { kind: BuildingKind; interior?: MapId; color: stri
   N: { kind: "mart", interior: "mart2", color: "#fbf6ef", roof: "#3a7bd5" },
   K: { kind: "church", color: "#fdfaf2", roof: "#b5542f" },
   G: { kind: "arena", interior: "arena1", color: "#8d8478", roof: "#f0a030" },
+  Q: { kind: "center", interior: "center3", color: "#fbf6ef", roof: "#e0463c" },
+  V: { kind: "cave", interior: "lapinha1", color: "#b3a58c", roof: "#8a7d68" },
   h: { kind: "house", color: "#f7c873", roof: "#b8472e" },
 };
 const HOUSE_COLORS = ["#f7c873", "#9fd3c7", "#f2a6a0", "#c3b1e1"];
@@ -209,11 +252,14 @@ export const BUILDINGS = findBuildings();
 // Interior chars: # wall  . floor  d exit mat  b bookshelf  v TV  s stairs  t table  B bed
 //   f plant  r rug  c counter  h healing machine  p PC  m lab machine  a starter table
 //   x shop shelf  k bench  o arena boulder
+// Cave chars (maps with cave: true): # rock  . floor (wild encounters)  d exit mat  o boulder
+//   * crystals  H hole down  U ladder up  X rockfall  Z fossil
 export interface Interior {
   rows: string[];
   floor: string;
   wall: string;
   music: string;
+  cave?: boolean;
 }
 
 const HOME_ROWS = ["##########", "#bbv...ss#", "#........#", "#..tt..B.#", "#..tt..B.#", "#........#", "#f..rr..f#", "####d#####"];
@@ -221,6 +267,61 @@ const CENTER_ROWS = ["############", "#f.h......p#", "#.cccccccc.#", "#.........
 const MART_ROWS = ["##########", "#...b.xxx#", "#ccc.....#", "#.....xx.#", "#.xx..xx.#", "#.xx.....#", "#f.......#", "####d#####"];
 const ARENA_ROWS = ["###########", "#o.......o#", "#.........#", "#oo.ooo.oo#", "#.........#", "#..o...o..#", "#.........#", "#o.......o#", "#.........#", "#####d#####"];
 const LAB_ROWS = ["############", "#mm.bbbb.mm#", "#..........#", "#....aaa...#", "#..........#", "#tt......tt#", "#tt......tt#", "#..........#", "#bb......bb#", "#####d######"];
+
+// Gruta da Lapinha (Mt. Moon): 1F from Route 3, B1F in two halves, B2F with the fossils.
+// The exit chamber of B1F is only reachable from B2F.
+const LAPINHA_1F = [
+  "######################",
+  "#..o.....##.....**...#",
+  "#.......###......H...#",
+  "#..###.......##......#",
+  "#..###..o....##..o...#",
+  "#........#.......###.#",
+  "##..**...#...........#",
+  "#........####..o.....#",
+  "#..o..........####...#",
+  "#....###.............#",
+  "#....###....o....o...#",
+  "#.............###....#",
+  "#..**.....#..........#",
+  "#.........#...o......#",
+  "#....................#",
+  "##########d###########",
+];
+const LAPINHA_B1F = [
+  "##############X#####",
+  "#........#.........#",
+  "#..U.....#....o....#",
+  "#........#.........#",
+  "#...o....#..H......#",
+  "#........#......**.#",
+  "#####..###.........#",
+  "#........###########",
+  "#..**..............#",
+  "#.............o....#",
+  "#....o.............#",
+  "#..........##...H..#",
+  "#..........##......#",
+  "####################",
+];
+const LAPINHA_B2F = [
+  "########################",
+  "#.....#......#.........#",
+  "#.Z.Z.#..o...#....U....#",
+  "#.....#......#.........#",
+  "#.....#..........o.....#",
+  "#..........###.........#",
+  "####.####..###..####.###",
+  "#......................#",
+  "#..o.....**.......o....#",
+  "#......###.............#",
+  "#......###....####.....#",
+  "#.U...........####..o..#",
+  "#......................#",
+  "#...**.......o.........#",
+  "#......................#",
+  "########################",
+];
 
 export const INTERIORS: Record<Exclude<MapId, "overworld">, Interior> = {
   home: { rows: HOME_ROWS, floor: "#d9b98a", wall: "#f3e6cf", music: "town" },
@@ -231,7 +332,28 @@ export const INTERIORS: Record<Exclude<MapId, "overworld">, Interior> = {
   mart1: { rows: MART_ROWS, floor: "#dfe8f2", wall: "#f5f8fb", music: "lab" },
   mart2: { rows: MART_ROWS, floor: "#dfe8f2", wall: "#f5f8fb", music: "lab" },
   arena1: { rows: ARENA_ROWS, floor: "#8a7a66", wall: "#5e554b", music: "town" },
+  center3: { rows: CENTER_ROWS, floor: "#f5e9e0", wall: "#fdf7f2", music: "lab" },
+  lapinha1: { rows: LAPINHA_1F, floor: "#6e6253", wall: "#5a4f43", music: "cave", cave: true },
+  lapinha2: { rows: LAPINHA_B1F, floor: "#5f5548", wall: "#4b4238", music: "cave", cave: true },
+  lapinha3: { rows: LAPINHA_B2F, floor: "#554b40", wall: "#40382f", music: "cave", cave: true },
 };
+
+export const isCave = (map: MapId) => map !== "overworld" && !!INTERIORS[map].cave;
+
+/** Ladders and holes, linked in pairs. You arrive standing on the other end. */
+const CAVE_LINKS: [MapId, number, number, MapId, number, number][] = [
+  ["lapinha1", 17, 2, "lapinha2", 3, 2],
+  ["lapinha2", 16, 11, "lapinha3", 2, 11],
+  ["lapinha3", 18, 2, "lapinha2", 12, 4],
+];
+
+export function caveLink(map: MapId, x: number, y: number): { map: MapId; x: number; y: number } | null {
+  for (const [m1, x1, y1, m2, x2, y2] of CAVE_LINKS) {
+    if (m1 === map && x1 === x && y1 === y) return { map: m2, x: x2, y: y2 };
+    if (m2 === map && x2 === x && y2 === y) return { map: m1, x: x1, y: y1 };
+  }
+  return null;
+}
 
 export function interiorDoor(map: MapId): [number, number] {
   const rows = INTERIORS[map as Exclude<MapId, "overworld">].rows;
@@ -246,7 +368,8 @@ export function buildingForInterior(map: MapId): Building | undefined {
 // ---------- NPCs ----------
 export type Look =
   | "player" | "rival" | "prof" | "mom" | "nurse" | "clerk" | "girl" | "boy" | "oldman"
-  | "oldwoman" | "worker" | "youngster" | "lass" | "aide" | "sister" | "man" | "miner" | "leader";
+  | "oldwoman" | "worker" | "youngster" | "lass" | "aide" | "sister" | "man" | "miner" | "leader"
+  | "bugcatcher" | "grunt" | "scientist";
 
 export interface TrainerDef {
   name: L;
@@ -354,8 +477,49 @@ export const NPCS: NpcDef[] = [
       sight: 3,
     },
   },
-  { id: "worker2", map: "overworld", x: 15, y: -34, facing: "down", look: "worker", text: [{ en: "The trail to Serra do Cipó is still being cleared. Come back in a future version!", pt: "A trilha para a Serra do Cipó ainda está sendo aberta. Volte numa próxima versão!" }] },
   { id: "pondMan", map: "overworld", x: 10, y: -18, facing: "left", look: "oldman", text: [{ en: "This pond never dries, even in August. The old folks say Iara keeps it full.", pt: "Este lago nunca seca, nem em agosto. Os antigos dizem que é a Iara que enche." }] },
+
+  // Route 3
+  {
+    id: "nando", map: "overworld", x: 13, y: -42, facing: "right", look: "youngster",
+    trainer: {
+      name: { en: "Youngster Nando", pt: "Garoto Nando" },
+      team: [["pardalito", 12], ["ratico", 13]],
+      reward: 390,
+      intro: { en: "Hey! Did you just come up from Route 2? Then you owe me a battle!", pt: "Ei! Você acabou de subir da Rota 2? Então me deve uma batalha!" },
+      win: { en: "I should've stayed on Route 2...", pt: "Eu devia ter ficado na Rota 2..." },
+      after: { en: "Bats fly out of the Gruta da Lapinha at dusk. There's a whole cloud of them!", pt: "Os morcegos saem da Gruta da Lapinha no fim da tarde. É uma nuvem inteira!" },
+      sight: 4,
+    },
+  },
+  {
+    id: "juca", map: "overworld", x: 20, y: -53, facing: "left", look: "bugcatcher",
+    trainer: {
+      name: { en: "Bug Catcher Juca", pt: "Caçador de Insetos Juca" },
+      team: [["lagartix", 12], ["lagartix", 12], ["borbolux", 13]],
+      reward: 260,
+      intro: { en: "Shh! I'm hunting Borbolux! ...Oh, you scared them all off. Battle!", pt: "Psiu! Estou caçando Borbolux! ...Ah, você espantou todos. Batalha!" },
+      win: { en: "My net's too small for a trainer like you.", pt: "Minha rede é pequena demais para você." },
+      after: { en: "Lagartix evolve fast. Level 10 and they're already flying!", pt: "Os Lagartix evoluem rápido. No nível 10 já estão voando!" },
+      sight: 3,
+    },
+  },
+  {
+    id: "lia", map: "overworld", x: 17, y: -60, facing: "left", look: "lass",
+    trainer: {
+      name: { en: "Lass Lia", pt: "Moça Lia" },
+      team: [["chispito", 13], ["corujita", 14]],
+      reward: 420,
+      intro: { en: "You're going into the cave? Let me warm you up first!", pt: "Vai entrar na gruta? Deixa eu te aquecer primeiro!" },
+      win: { en: "OK, you're warmed up. Very warmed up.", pt: "Tá, você está aquecido. Bem aquecido." },
+      after: { en: "Heal up at the Healing Center before you go in. The cave is long!", pt: "Cure sua equipe no Centro de Cura antes de entrar. A gruta é longa!" },
+      sight: 3,
+    },
+  },
+  { id: "caveGuide", map: "overworld", x: 18, y: -65, facing: "down", look: "oldman", lookAround: true, text: [
+    { en: "Almost two hundred years ago, a Danish naturalist called Lund dug giant sloth bones out of these caves.", pt: "Quase duzentos anos atrás, um naturalista dinamarquês chamado Lund tirou ossos de preguiça-gigante destas grutas." },
+    { en: "Lately, men in dark bandanas go in and come out with sacks. They're no scientists, I tell you.", pt: "Ultimamente, uns homens de bandana escura entram e saem com sacos. Cientistas é que não são, isso eu garanto." },
+  ] },
 
   // Cidade Ipê Arena
   {
@@ -409,6 +573,73 @@ export const NPCS: NpcDef[] = [
   { id: "clerk1", map: "mart1", x: 2, y: 1, facing: "down", look: "clerk", script: "clerkTown" },
   { id: "shopper1", map: "mart1", x: 7, y: 5, facing: "up", look: "girl", text: [{ en: "Amulets are cheap. I always buy a bunch before heading out!", pt: "Amuletos são baratos. Sempre compro vários antes de sair!" }] },
   { id: "nurse2", map: "center2", x: 5, y: 1, facing: "down", look: "nurse", script: "nurse" },
+  { id: "nurse3", map: "center3", x: 5, y: 1, facing: "down", look: "nurse", script: "nurse" },
+  { id: "visitor3", map: "center3", x: 9, y: 5, facing: "left", look: "miner", text: [{ en: "I explore caves for fun. The Lapinha goes three floors down, and the way out north is on the middle floor!", pt: "Exploro grutas por diversão. A Lapinha desce três andares, e a saída norte fica no andar do meio!" }] },
+  // Gruta da Lapinha
+  {
+    id: "beto", map: "lapinha1", x: 4, y: 8, facing: "right", look: "miner",
+    trainer: {
+      name: { en: "Caver Beto", pt: "Espeleólogo Beto" },
+      team: [["pedrudo", 12], ["morceguinho", 13]],
+      reward: 390,
+      intro: { en: "Watch your step! Caves are full of surprises, like me!", pt: "Cuidado onde pisa! Grutas são cheias de surpresas, como eu!" },
+      win: { en: "Surprise! I lost.", pt: "Surpresa! Perdi." },
+      after: { en: "Morceguinho have no eyes. They find you by sound, so they always find you.", pt: "Morceguinhos não têm olhos. Eles acham você pelo som, então sempre acham." },
+      sight: 4,
+    },
+  },
+  {
+    id: "grunt1", map: "lapinha1", x: 15, y: 5, facing: "left", look: "grunt",
+    trainer: {
+      name: { en: "Garimpo Grunt", pt: "Capanga do Garimpo" },
+      team: [["ratico", 13], ["morceguinho", 13]],
+      reward: 390,
+      intro: { en: "This cave belongs to Garimpo Sombrio now! Scram, kid!", pt: "Esta gruta agora é do Garimpo Sombrio! Some daqui, pirralho!" },
+      win: { en: "Tch. The boss won't like this.", pt: "Tsc. O chefe não vai gostar disso." },
+      after: { en: "We dig up what we like, where we like. Gems, gold, fossils... It all sells.", pt: "A gente cava o que quer, onde quer. Gemas, ouro, fósseis... Tudo vende." },
+      sight: 4,
+    },
+  },
+  { id: "worker3", map: "lapinha2", x: 14, y: 1, facing: "down", look: "worker", text: [
+    { en: "A rockslide blocked the tunnel to Serra do Cipó. Somebody's been blasting in here without a permit.", pt: "Um desmoronamento bloqueou o túnel para a Serra do Cipó. Alguém andou detonando aqui sem licença." },
+    { en: "Our crew is digging from the other side. Come back soon!", pt: "Nossa equipe está cavando do outro lado. Volte logo!" },
+  ] },
+  {
+    id: "grunt2", map: "lapinha2", x: 8, y: 10, facing: "left", look: "grunt",
+    trainer: {
+      name: { en: "Garimpo Grunt", pt: "Capanga do Garimpo" },
+      team: [["pedrudo", 14], ["ratico", 14]],
+      reward: 420,
+      intro: { en: "You're lost, kid. Let me show you the way out!", pt: "Tá perdido, pirralho? Deixa eu te mostrar a saída!" },
+      win: { en: "I'm the one who's lost...", pt: "Quem se perdeu fui eu..." },
+      after: { en: "Somebody down below found fossils. Fossils sell for a fortune!", pt: "Alguém lá embaixo achou fósseis. Fóssil vale uma fortuna!" },
+      sight: 4,
+    },
+  },
+  {
+    id: "grunt3", map: "lapinha3", x: 20, y: 7, facing: "left", look: "grunt",
+    trainer: {
+      name: { en: "Garimpo Grunt", pt: "Capanga do Garimpo" },
+      team: [["morceguinho", 14], ["ratico", 14], ["pedrudo", 16]],
+      reward: 480,
+      intro: { en: "Garimpo Sombrio digs where it wants! And we want what's in this cave!", pt: "O Garimpo Sombrio cava onde quiser! E a gente quer o que tem nesta gruta!" },
+      win: { en: "Blast it! Not literally. We already did that.", pt: "Droga! Pelo menos a dinamite a gente já usou." },
+      after: { en: "Go ahead, take the stupid ladder. We'll be back with more crew.", pt: "Vai, pega essa escada. A gente volta com mais gente." },
+      sight: 4,
+    },
+  },
+  {
+    id: "lapNerd", map: "lapinha3", x: 4, y: 4, facing: "down", look: "scientist",
+    trainer: {
+      name: { en: "Scientist Otávio", pt: "Cientista Otávio" },
+      team: [["chispito", 14], ["pedrudo", 14], ["chispito", 15]],
+      reward: 600,
+      intro: { en: "Stop right there! I found these fossils first! They're not going to any smugglers, and they're not going to you!", pt: "Pare aí! Eu achei estes fósseis primeiro! Não vão para contrabandista nenhum, nem para você!" },
+      win: { en: "All right, all right! You're clearly no smuggler.", pt: "Tá bom, tá bom! Você claramente não é contrabandista." },
+      after: { en: "We'll share them. Pick one of the two fossils, and I'll take the other one to a lab.", pt: "Vamos dividir. Escolha um dos dois fósseis e eu levo o outro para um laboratório." },
+      sight: 2,
+    },
+  },
   { id: "visitor2", map: "center2", x: 5, y: 4, facing: "right", look: "oldman", text: [{ en: "Evolution is a wonder of nature. Some trainers cancel it by pressing B... why?", pt: "A evolução é uma maravilha. Alguns treinadores cancelam apertando B... por quê?" }] },
   { id: "clerk2", map: "mart2", x: 2, y: 1, facing: "down", look: "clerk", script: "clerkCity" },
   { id: "shopper2", map: "mart2", x: 8, y: 5, facing: "left", look: "man", text: [{ en: "Great Amulets catch creatures more easily than regular ones. Worth it!", pt: "Super Amuletos capturam mais fácil que os normais. Valem a pena!" }] },
@@ -430,6 +661,8 @@ export const SIGNS: Sign[] = [
   { map: "overworld", x: 13, y: 15, text: { en: "CIDADE IPÊ\nWhere the ipê trees bloom purple.", pt: "CIDADE IPÊ\nOnde os ipês florescem roxos." } },
   { map: "overworld", x: 13, y: 7, text: { en: "CIDADE IPÊ ARENA\nLeader: Topázio\nThe rock-hard gem of Minas!", pt: "ARENA DE CIDADE IPÊ\nLíder: Topázio\nA joia dura como pedra de Minas!" } },
   { map: "overworld", x: 26, y: -2, text: { en: "ROUTE 2\nCidade Ipê ↓   Serra do Cipó ↑", pt: "ROTA 2\nCidade Ipê ↓   Serra do Cipó ↑" } },
+  { map: "overworld", x: 14, y: -38, text: { en: "ROUTE 3\nRoute 2 ↓   Gruta da Lapinha ↑", pt: "ROTA 3\nRota 2 ↓   Gruta da Lapinha ↑" } },
+  { map: "overworld", x: 14, y: -66, text: { en: "GRUTA DA LAPINHA\nLimestone caves of Lagoa Santa. Mind the bats!", pt: "GRUTA DA LAPINHA\nGrutas de calcário de Lagoa Santa. Cuidado com os morcegos!" } },
   { map: "overworld", x: 8, y: 62, text: { en: "{player}'s house", pt: "Casa de {player}" } },
   { map: "overworld", x: 29, y: 61, text: { en: "{rival}'s house", pt: "Casa de {rival}" } },
 ];
@@ -453,6 +686,14 @@ export const GROUND_ITEMS: GroundItem[] = [
   { id: "gi7", map: "overworld", x: 28, y: -19, item: "amuleto", qty: 3 },
   { id: "gi8", map: "overworld", x: 3, y: -26, item: "reviver", qty: 1 },
   { id: "gi9", map: "overworld", x: 28, y: -32, item: "superamuleto", qty: 1 },
+  { id: "gi10", map: "overworld", x: 5, y: -54, item: "superpocao", qty: 1 },
+  { id: "gi11", map: "overworld", x: 28, y: -66, item: "reviver", qty: 1 },
+  { id: "gi12", map: "overworld", x: 24, y: -43, item: "antidoto", qty: 2 },
+  { id: "gi13", map: "lapinha1", x: 20, y: 1, item: "superamuleto", qty: 1 },
+  { id: "gi14", map: "lapinha1", x: 1, y: 14, item: "pocao", qty: 2 },
+  { id: "gi15", map: "lapinha2", x: 1, y: 12, item: "despertador", qty: 1 },
+  { id: "gi16", map: "lapinha3", x: 22, y: 14, item: "curatotal", qty: 1 },
+  { id: "gi17", map: "lapinha3", x: 12, y: 1, item: "superpocao", qty: 1 },
 ];
 
 // ---------- Wild encounters ----------
@@ -463,7 +704,28 @@ export interface EncounterSlot {
   weight: number;
 }
 
-export function encounterTable(y: number): EncounterSlot[] {
+const CAVE_UPPER: EncounterSlot[] = [
+  { species: "morceguinho", min: 10, max: 12, weight: 50 },
+  { species: "pedrudo", min: 10, max: 13, weight: 40 },
+  { species: "luazinha", min: 11, max: 12, weight: 10 },
+];
+const CAVE_DEEP: EncounterSlot[] = [
+  { species: "morceguinho", min: 11, max: 13, weight: 45 },
+  { species: "pedrudo", min: 11, max: 14, weight: 38 },
+  { species: "luazinha", min: 12, max: 14, weight: 17 },
+];
+
+export function encounterTable(map: MapId, y: number): EncounterSlot[] {
+  if (map === "lapinha1" || map === "lapinha2") return CAVE_UPPER;
+  if (map === "lapinha3") return CAVE_DEEP;
+  if (y < -36)
+    return [
+      { species: "pardalito", min: 11, max: 13, weight: 30 },
+      { species: "lagartix", min: 11, max: 13, weight: 25 },
+      { species: "chispito", min: 12, max: 14, weight: 20 },
+      { species: "morceguinho", min: 11, max: 12, weight: 15 },
+      { species: "borbolux", min: 12, max: 14, weight: 10 },
+    ];
   if (y < 0)
     return [
       { species: "pardalito", min: 10, max: 12, weight: 20 },
@@ -502,8 +764,10 @@ export function tileAt(map: MapId, x: number, y: number): string {
 
 const OW_WALK = new Set([".", ",", '"', "f", "s", "="]);
 const IN_WALK = new Set([".", "d", "r"]);
+const CAVE_WALK = new Set([".", "d", "H", "U"]);
 
 export function isWalkableTile(map: MapId, x: number, y: number): boolean {
   const t = tileAt(map, x, y);
-  return map === "overworld" ? OW_WALK.has(t) : IN_WALK.has(t);
+  if (map === "overworld") return OW_WALK.has(t);
+  return (INTERIORS[map].cave ? CAVE_WALK : IN_WALK).has(t);
 }

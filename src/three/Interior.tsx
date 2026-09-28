@@ -4,10 +4,10 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type * as THREE from "three";
-import { INTERIORS } from "../world/maps";
+import { GROUND_ITEMS, INTERIORS } from "../world/maps";
 import { flag, useGame, type MapId } from "../game/store";
 import { STARTERS } from "../data/species";
-import { Bx, Cy, Sph, Rk, glow, mat, GEO, CrystalCluster, MineCart } from "./prims";
+import { Bx, Cn, Cy, Sph, Rk, glow, mat, GEO, CrystalCluster, MineCart } from "./prims";
 import { AmuletModel } from "./Amulet";
 import { CreatureModel } from "./Creatures";
 
@@ -258,6 +258,154 @@ function MineDecor({ W, H, doorX, cartY }: { W: number; H: number; doorX: number
   );
 }
 
+// ---------------------------------------------------------------- caves
+// Walls stay low (under ~1.3) so the follow camera can see the player over the rock just south.
+const CALCITE = "#d7eef2";
+const CALCITE_DIM = "#a9cdd6";
+
+function CaveWall({ x, y, H, c }: { x: number; y: number; H: number; c: string }) {
+  const south = y === H - 1;
+  const h = south ? 0.3 : 0.9;
+  const k = (x * 7 + y * 13) % 5;
+  const tone = ROCK_TONES[(x + y * 2) % 3];
+  return (
+    <group>
+      <Bx p={[x, h / 2, y]} s={[1, h, 1]} c={c} />
+      {!south && <Rk p={[x + (k - 2) * 0.06, h + 0.1 + k * 0.03, y]} s={[0.52, 0.28 + k * 0.03, 0.52]} r={[k, x % 6, y % 4]} c={tone} />}
+    </group>
+  );
+}
+
+function Ladder() {
+  return (
+    <group>
+      {[-0.22, 0.22].map((dx) => (
+        <Bx key={dx} p={[dx, 0.9, -0.3]} r={[-0.25, 0, 0]} s={[0.07, 1.9, 0.07]} c={WOOD} />
+      ))}
+      {[0.25, 0.6, 0.95, 1.3, 1.65].map((h) => (
+        <Bx key={h} p={[0, h, -0.3 - (h - 0.9) * 0.255]} s={[0.44, 0.05, 0.06]} c={WOOD} />
+      ))}
+      {/* daylight from the floor above */}
+      <mesh position={[0, 0.02, -0.1]} rotation={[-Math.PI / 2, 0, 0]} material={glow("#fff2c0", 0.18)}>
+        <circleGeometry args={[0.45, 16]} />
+      </mesh>
+    </group>
+  );
+}
+
+function Hole() {
+  return (
+    <group>
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]} material={glow("#050403")}>
+        <circleGeometry args={[0.38, 16]} />
+      </mesh>
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <Rk key={i} p={[Math.cos(i * 1.05) * 0.42, 0.05, Math.sin(i * 1.05) * 0.42]} s={[0.14, 0.08, 0.12]} r={[i, i * 2, 0]} c={ROCK_TONES[i % 3]} />
+      ))}
+    </group>
+  );
+}
+
+function Fossil({ x }: { x: number }) {
+  const taken = useGame((s) => !!s.flags.fossilTaken);
+  return (
+    <group>
+      <Rk p={[0, 0.12, 0]} s={[0.45, 0.2, 0.4]} r={[0, x, 0]} c="#8a7d68" />
+      {!taken &&
+        (x === 2 ? (
+          // a sloth's hooked claw
+          <group position={[0, 0.3, 0.02]} rotation={[0, 0.4, 0]} scale={1.6}>
+            {[-0.08, 0, 0.08].map((dx, i) => (
+              <Cn key={dx} p={[dx, 0.08, 0.04 * i]} s={[0.035, 0.2, 0.035]} r={[0.9, 0, 0]} c="#efe4c8" />
+            ))}
+            <Sph s={[0.14, 0.06, 0.1]} c="#e0d4b4" />
+          </group>
+        ) : (
+          // a long saber fang
+          <group position={[0, 0.3, 0.02]} rotation={[0, -0.3, 0.2]} scale={1.6}>
+            <Cn p={[0, 0.14, 0]} s={[0.05, 0.32, 0.04]} r={[0, 0, 0.25]} c="#f2ead4" />
+            <Sph p={[-0.02, 0, 0]} s={[0.1, 0.06, 0.08]} c="#e0d4b4" />
+          </group>
+        ))}
+    </group>
+  );
+}
+
+function CaveItems({ map }: { map: MapId }) {
+  const flags = useGame((s) => s.flags);
+  return (
+    <>
+      {GROUND_ITEMS.filter((i) => i.map === map && !flags["item_" + i.id]).map((i) => (
+        <group key={i.id} position={[i.x, 0.16, i.y]} scale={0.15} rotation={[0.3, 0.4, 0]}>
+          <AmuletModel great={i.item === "superamuleto"} />
+        </group>
+      ))}
+    </>
+  );
+}
+
+function CaveView({ map }: { map: MapId }) {
+  const def = INTERIORS[map as Exclude<MapId, "overworld">];
+  const rows = def.rows;
+  const H = rows.length;
+  const W = rows[0].length;
+  const at = (x: number, y: number) => rows[y]?.[x] ?? "#";
+  const items: JSX.Element[] = [];
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const ch = rows[y][x];
+      const key = `${x},${y}`;
+      if (ch === "#") {
+        items.push(<CaveWall key={key} x={x} y={y} H={H} c={def.wall} />);
+        // Lanterns hang on some wall faces that look onto the floor.
+        if (y < H - 1 && at(x, y + 1) === "." && (x * 7 + y * 3) % 9 === 0) items.push(<Lantern key={`l${key}`} p={[x, 0.75, y + 0.56]} />);
+      } else if (ch === "o") items.push(<Rk key={key} p={[x, 0.32, y]} s={[0.5, 0.42, 0.48]} r={[0.3, (x * 7 + y * 3) % 6, 0.2]} c={ROCK_TONES[(x + y) % 3]} />);
+      else if (ch === "*") items.push(<CrystalCluster key={key} p={[x, 0.2, y]} s={0.55} topaz={CALCITE} accent={CALCITE_DIM} />);
+      else if (ch === "U")
+        items.push(
+          <group key={key} position={[x, 0, y]}>
+            <Ladder />
+          </group>,
+        );
+      else if (ch === "H")
+        items.push(
+          <group key={key} position={[x, 0, y]}>
+            <Hole />
+          </group>,
+        );
+      else if (ch === "X")
+        items.push(
+          <group key={key} position={[x, 0, y]}>
+            {[[-0.3, 0.3, 0.1], [0.25, 0.35, 0], [0, 0.75, -0.1], [0.3, 0.2, 0.35], [-0.25, 0.15, 0.4]].map(([dx, h, dz], i) => (
+              <Rk key={i} p={[dx, h, dz]} s={[0.35, 0.3, 0.32]} r={[i, i * 2, i]} c={ROCK_TONES[i % 3]} />
+            ))}
+          </group>,
+        );
+      else if (ch === "Z")
+        items.push(
+          <group key={key} position={[x, 0, y]}>
+            <Fossil x={x} />
+          </group>,
+        );
+      else if (ch === "d")
+        items.push(
+          <mesh key={key} position={[x, 0.01, y]} rotation={[-Math.PI / 2, 0, 0]} material={glow("#fff2c0", 0.3)}>
+            <planeGeometry args={[1, 1]} />
+          </mesh>,
+        );
+    }
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(W - 1) / 2, 0, (H - 1) / 2]} receiveShadow>
+        <planeGeometry args={[W, H]} />
+        <meshLambertMaterial color={def.floor} />
+      </mesh>
+      {items}
+      <CaveItems map={map} />
+    </group>
+  );
+}
+
 function Preview() {
   const preview = useGame((s) => s.preview);
   const ref = useRef<THREE.Group>(null);
@@ -280,6 +428,7 @@ function Preview() {
 
 export function InteriorView({ map }: { map: MapId }) {
   const def = INTERIORS[map as Exclude<MapId, "overworld">];
+  if (def.cave) return <CaveView map={map} />;
   const rows = def.rows;
   const H = rows.length;
   const W = rows[0].length;

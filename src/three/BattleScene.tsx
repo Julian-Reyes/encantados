@@ -7,7 +7,9 @@ import * as THREE from "three";
 import { bv, ANIM_MS, now, type SideVis } from "./battleVis";
 import { CreatureModel } from "./Creatures";
 import { AmuletModel } from "./Amulet";
-import { Cy, Sph, glow, GEO } from "./prims";
+import { Cy, Rk, Sph, glow, GEO, CrystalCluster } from "./prims";
+import { useGame } from "../game/store";
+import { isCave } from "../world/maps";
 import { TYPES } from "../data/types";
 import type { Side } from "../game/battle";
 
@@ -23,12 +25,39 @@ const SCALE: Record<Side, number> = { enemy: 1.05, player: 1.2 };
 const ease = (t: number) => 1 - Math.pow(1 - t, 3);
 const prog = (s: { anim: unknown; t0: number }, kind: keyof typeof ANIM_MS) => Math.min(1, Math.max(0, (now() - s.t0) / (ANIM_MS[kind] / 1000)));
 
-function Platform({ side }: { side: Side }) {
+function Platform({ side, cave }: { side: Side; cave: boolean }) {
   const p = POS[side];
   return (
     <group position={[p.x, 0, p.z]}>
-      <Cy p={[0, -0.03, 0]} s={[1.25, 0.1, 0.95]} c="#6fae52" />
-      <Cy p={[0, 0.0, 0]} s={[1.1, 0.1, 0.82]} c="#9fd27a" />
+      <Cy p={[0, -0.03, 0]} s={[1.25, 0.1, 0.95]} c={cave ? "#6a5e50" : "#6fae52"} />
+      <Cy p={[0, 0.0, 0]} s={[1.1, 0.1, 0.82]} c={cave ? "#8f8270" : "#9fd27a"} />
+    </group>
+  );
+}
+
+/** Inside a cave: dark rock floor, a ring of boulders and a few glinting crystals. */
+function CaveBackdrop() {
+  const rocks = useMemo(() => {
+    const out: [number, number, number, number][] = [];
+    for (let i = 0; i < 30; i++) {
+      const a = -1.4 + (i / 29) * 2.8;
+      const r = 8 + ((i * 37) % 7) * 0.7;
+      out.push([Math.sin(a) * r, 0, -Math.cos(a) * r + 1, 1.2 + ((i * 13) % 5) * 0.35]);
+    }
+    return out;
+  }, []);
+  return (
+    <group position={[O.x, 0, O.z]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
+        <circleGeometry args={[40, 32]} />
+        <meshLambertMaterial color="#4a4036" />
+      </mesh>
+      {rocks.map(([x, y, z, k], i) => (
+        <Rk key={i} p={[x, y + k * 0.5, z]} s={[k, k * 1.2, k]} r={[i, i * 2, 0]} c={["#5e554b", "#6b6156", "#51493f"][i % 3]} />
+      ))}
+      {[[-4, -6], [3.5, -7], [6, -4], [-6.5, -3]].map(([x, z], i) => (
+        <CrystalCluster key={i} p={[x, 0.3, z]} s={0.8} topaz="#d7eef2" accent="#a9cdd6" />
+      ))}
     </group>
   );
 }
@@ -290,12 +319,14 @@ function Backdrop() {
 }
 
 export function BattleScene() {
+  const map = useGame((s) => s.pos.map);
+  const cave = isCave(map);
   return (
     <group>
-      <Backdrop />
+      {cave ? <CaveBackdrop /> : <Backdrop />}
       <group position={[O.x, 0, O.z]}>
-        <Platform side="enemy" />
-        <Platform side="player" />
+        <Platform side="enemy" cave={cave} />
+        <Platform side="player" cave={cave} />
       </group>
       <SideCreature side="enemy" />
       <SideCreature side="player" />

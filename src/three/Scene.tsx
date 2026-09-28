@@ -6,6 +6,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { G, useGame, type MapId } from "../game/store";
 import { rt, tick, npcDefsFor } from "../world/runtime";
+import { isCave } from "../world/maps";
 import { Overworld } from "./Overworld";
 import { InteriorView } from "./Interior";
 import { ActorView, Humanoid } from "./Characters";
@@ -54,10 +55,11 @@ function Rig() {
       camera.position.set(BATTLE_ORIGIN.x + 0.2, 0.7 + 1.05 * k, BATTLE_ORIGIN.z - 0.6 + 5.9 * k);
       camera.lookAt(BATTLE_ORIGIN.x + 0.25, 0.7, BATTLE_ORIGIN.z - 0.6);
       target.copy(BATTLE_ORIGIN);
-      bg.set("#bfe8ff");
+      const sky = isCave(rt.map) ? "#15110d" : "#bfe8ff";
+      bg.set(sky);
       fog.near = 30;
       fog.far = 70;
-      fog.color.set("#bfe8ff");
+      fog.color.set(sky);
     } else if (s.mode === "evolve") {
       camera.position.set(EVO_ORIGIN.x, 1.0, EVO_ORIGIN.z + 3.4);
       camera.lookAt(EVO_ORIGIN.x, 0.6, EVO_ORIGIN.z);
@@ -89,7 +91,7 @@ function Rig() {
       else camera.position.set(target.x, 8.0, target.z + 7.0);
       camera.lookAt(target.x, 0.3, target.z - 0.4);
       if (indoor) {
-        bg.set("#141418");
+        bg.set(isCave(rt.map) ? "#0b0907" : "#141418");
         fog.near = 500;
         fog.far = 1000;
       } else {

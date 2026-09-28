@@ -10,7 +10,9 @@ export type SpeciesId =
   | "lagartix" | "borbolux"
   | "pedrudo" | "rochedao"
   | "chispito" | "chispao"
-  | "corujita" | "rasgamorte";
+  | "corujita" | "rasgamorte"
+  | "morceguinho" | "morcegao"
+  | "luazinha";
 
 export interface BaseStats {
   hp: number;
@@ -170,7 +172,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
   pedrudo: S({
     id: "pedrudo", dex: 13, name: "Pedrudo", types: ["rock"],
     base: { hp: 40, atk: 80, def: 100, spa: 30, spd: 30, spe: 20 }, catchRate: 255, baseExp: 60,
-    learnset: [[1, "tackle"], [1, "defensecurl"], [6, "rockthrow"], [11, "headbutt"], [17, "rockslide"]],
+    learnset: [[1, "tackle"], [1, "defensecurl"], [6, "rockthrow"], [11, "headbutt"], [14, "mudslap"], [17, "rockslide"]],
     evolves: { to: "rochedao", level: 16 },
     kind: { en: "Pebble", pt: "Pedregulho" }, height: 0.4, weight: 20, color: "#9a938a",
     lore: {
@@ -181,7 +183,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
   rochedao: S({
     id: "rochedao", dex: 14, name: "Rochedão", types: ["rock"],
     base: { hp: 55, atk: 95, def: 115, spa: 45, spd: 45, spe: 35 }, catchRate: 120, baseExp: 137,
-    learnset: [[1, "tackle"], [1, "defensecurl"], [6, "rockthrow"], [11, "headbutt"], [17, "rockslide"]],
+    learnset: [[1, "tackle"], [1, "defensecurl"], [6, "rockthrow"], [11, "headbutt"], [14, "mudslap"], [17, "rockslide"], [24, "tremor"]],
     kind: { en: "Boulder", pt: "Rochedo" }, height: 1.0, weight: 105, color: "#7d766c",
     lore: {
       en: "It rolls down mountain slopes to travel. Miners in Minas say finding one means gold is nearby.",
@@ -228,6 +230,37 @@ export const SPECIES: Record<SpeciesId, Species> = {
     lore: {
       en: "Named after the Rasga-Mortalha, whose screech sounds like tearing cloth. Despite the legend, it is gentle and loyal.",
       pt: "Recebeu o nome da Rasga-Mortalha, cujo grito lembra pano rasgando. Apesar da lenda, é gentil e leal.",
+    },
+  }),
+  morceguinho: S({
+    id: "morceguinho", dex: 19, name: "Morceguinho", types: ["poison", "flying"],
+    base: { hp: 40, atk: 45, def: 35, spa: 30, spd: 40, spe: 55 }, catchRate: 255, baseExp: 54,
+    learnset: [[1, "leechlife"], [6, "screech"], [10, "bite"], [15, "wingattack"], [19, "poisonfang"]],
+    evolves: { to: "morcegao", level: 22 },
+    kind: { en: "Cave Bat", pt: "Morcego da Gruta" }, height: 0.8, weight: 7.5, color: "#5a78c8",
+    lore: {
+      en: "Thousands roost in the limestone caves of Lagoa Santa. It has no eyes and finds its way by squeaking.",
+      pt: "Milhares vivem nas grutas de calcário de Lagoa Santa. Não tem olhos e se guia pelos próprios guinchos.",
+    },
+  }),
+  morcegao: S({
+    id: "morcegao", dex: 20, name: "Morcegão", types: ["poison", "flying"],
+    base: { hp: 75, atk: 80, def: 70, spa: 65, spd: 75, spe: 90 }, catchRate: 90, baseExp: 159,
+    learnset: [[1, "leechlife"], [6, "screech"], [10, "bite"], [15, "wingattack"], [19, "poisonfang"], [26, "shadowclaw"]],
+    kind: { en: "Big Bat", pt: "Morcegão" }, height: 1.6, weight: 55, color: "#3f5aa8",
+    lore: {
+      en: "Its mouth opens wider than its whole head. Cavers in Minas hang garlic at the cave mouth, which it completely ignores.",
+      pt: "A boca abre mais que a cabeça inteira. Espeleólogos de Minas penduram alho na entrada da gruta, e ele nem liga.",
+    },
+  }),
+  luazinha: S({
+    id: "luazinha", dex: 21, name: "Luazinha", types: ["normal"],
+    base: { hp: 70, atk: 45, def: 48, spa: 60, spd: 65, spe: 35 }, catchRate: 150, baseExp: 68,
+    learnset: [[1, "tackle"], [1, "growl"], [5, "lullaby"], [9, "defensecurl"], [13, "moonglow"], [17, "headbutt"]],
+    kind: { en: "Moon Sprite", pt: "Fada da Lua" }, height: 0.6, weight: 7.5, color: "#f3c6d8",
+    lore: {
+      en: "Rarely seen outside the deepest caves. On full-moon nights it climbs out to dance, and sings the same lullaby every time.",
+      pt: "Raramente vista fora das grutas mais fundas. Em noites de lua cheia sobe para dançar e canta sempre a mesma cantiga.",
     },
   }),
 };

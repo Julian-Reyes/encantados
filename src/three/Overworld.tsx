@@ -241,13 +241,19 @@ function BuildingMesh({ b }: { b: Building }) {
   const cz = b.y + (b.h - 1) / 2;
   const W = b.w - 0.1;
   const D = b.h - 0.1;
-  const wallH = { home: 1.35, rivalhouse: 1.35, house: 1.3, lab: 1.7, center: 1.6, mart: 1.5, church: 2.1, arena: 0 }[b.kind];
+  const wallH = { home: 1.35, rivalhouse: 1.35, house: 1.3, lab: 1.7, center: 1.6, mart: 1.5, church: 2.1, arena: 0, cave: 0 }[b.kind];
   const front = D / 2 + 0.01;
   const doorX = b.door[0] - cx;
   if (b.kind === "arena")
     return (
       <group position={[cx, 0, cz]}>
         <Arena W={W} D={D} doorX={doorX} rock={b.color} topaz={b.roof} />
+      </group>
+    );
+  if (b.kind === "cave")
+    return (
+      <group position={[cx, 0, cz]}>
+        <CaveMouth W={W} D={D} doorX={doorX} rock={b.color} dark={b.roof} />
       </group>
     );
   const accent = b.kind === "center" ? CENTER_RED : b.kind === "mart" ? MART_BLUE : null;
@@ -471,6 +477,53 @@ function Arena({ W, D, doorX, rock, topaz }: { W: number; D: number; doorX: numb
           <Cy r={[Math.PI / 2, 0, 0]} s={[0.07, 0.12, 0.07]} c="#c9a24a" />
         </group>
       </group>
+    </group>
+  );
+}
+
+// The Gruta da Lapinha: a pale limestone hill with a dark opening, hanging stalactites and
+// cerrado shrubs clinging to the rock.
+function CaveMouth({ W, D, doorX, rock, dark }: { W: number; D: number; doorX: number; rock: string; dark: string }) {
+  const faceZ = D / 2 - 0.45;
+  const back = -D / 2;
+  const tones = [rock, dark, "#c9bda4"];
+  const boulders = useMemo(() => {
+    const out: [number, number, number, number, number][] = [];
+    for (let i = 0; i < 22; i++) {
+      const x = (hash(i, 1, 4) - 0.5) * (W - 0.6);
+      const z = back + 0.5 + hash(i, 2, 4) * (faceZ - back - 0.4);
+      // Keep the rock around the opening low enough to read the arch.
+      if (Math.abs(x - doorX) < 1.1 && z > faceZ - 0.9) continue;
+      out.push([x, 1.2 + hash(i, 3, 4) * 1.1 - (z - back) * 0.2, z, 0.6 + hash(i, 5, 4) * 0.6, Math.floor(hash(i, 6, 4) * 3)]);
+    }
+    return out;
+  }, [W, back, faceZ, doorX]);
+  return (
+    <group>
+      <mesh geometry={GEO.box} material={mat(rock)} position={[0, 0.8, (faceZ + back) / 2]} scale={[W, 1.6, faceZ - back]} castShadow receiveShadow />
+      {boulders.map(([x, y, z, k, t], i) => (
+        <mesh key={i} geometry={GEO.rock} material={mat(tones[t])} position={[x, y, z]} scale={[k, k * 0.8, k]} rotation={[hash(i, 7) * 6, hash(i, 8) * 6, 0]} castShadow receiveShadow />
+      ))}
+      {/* the opening, framed by rocks, with stalactites hanging over it */}
+      <group position={[doorX, 0, faceZ]}>
+        <Bx p={[0, 0.65, 0.02]} s={[1.2, 1.3, 0.05]} c="#0d0b09" shadow={false} />
+        <mesh geometry={GEO.sphere} material={mat("#0d0b09")} position={[0, 1.3, 0.02]} scale={[0.6, 0.35, 0.03]} />
+        {[-1, 1].map((sd) => (
+          <group key={sd}>
+            <mesh geometry={GEO.rock} material={mat(tones[1])} position={[sd * 0.8, 0.55, 0.15]} scale={[0.45, 0.65, 0.35]} rotation={[0.2, sd, 0.1]} castShadow />
+            <mesh geometry={GEO.rock} material={mat(rock)} position={[sd * 0.62, 1.35, 0.12]} scale={[0.4, 0.4, 0.3]} rotation={[0.5, sd * 2, 0.3]} castShadow />
+          </group>
+        ))}
+        <mesh geometry={GEO.rock} material={mat(tones[2])} position={[0, 1.78, 0.1]} scale={[0.8, 0.35, 0.35]} castShadow />
+        {[-0.35, -0.1, 0.18, 0.4].map((x, i) => (
+          <Cn4 key={x} p={[x, 1.5 - (i % 2) * 0.08, 0.1]} s={[0.07, 0.28 + (i % 2) * 0.1, 0.07]} r={[Math.PI, 0, 0]} c="#d8ccb2" />
+        ))}
+        <Bx p={[0, 0.02, 0.3]} s={[1.2, 0.04, 0.5]} c="#9b8f7c" shadow={false} />
+      </group>
+      {/* shrubs on the hill */}
+      {[[-2.8, 1.75, 0.6], [2.6, 1.9, 0.2], [-1.2, 2.3, -1.1], [3.2, 1.1, 1.3], [-3.3, 1.0, 1.4]].map(([x, y, z], i) => (
+        <Sph key={i} p={[x, y, z]} s={[0.35, 0.28, 0.35]} c={i % 2 ? "#5a8a3a" : "#6a9a44"} />
+      ))}
     </group>
   );
 }

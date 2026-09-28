@@ -6,7 +6,7 @@ import { say, yesno } from "../game/dialog";
 import { sfx, refreshMusic } from "../game/audio";
 import { currentSpot, runScript } from "../world/runtime";
 import { DEX_ORDER, SPECIES } from "../data/species";
-import { ITEMS, type ItemId } from "../data/items";
+import { ITEMS, type Item, type ItemId } from "../data/items";
 import { MOVES } from "../data/moves";
 import { TYPES } from "../data/types";
 import { calcStats, displayName, expForLevel, maxHp, type Mon } from "../game/mon";
@@ -325,6 +325,14 @@ function Summary({ mons, index, onIndex, onClose }: { mons: Mon[]; index: number
 }
 
 // ---------------------------------------------------------------- bag
+type Pocket = Item["pocket"];
+const POCKETS: Pocket[] = ["items", "amulets", "key"];
+const POCKET_NAMES: Record<Pocket, L> = {
+  items: { en: "ITEMS", pt: "ITENS" },
+  amulets: { en: "AMULETS", pt: "AMULETOS" },
+  key: { en: "KEY ITEMS", pt: "ITENS-CHAVE" },
+};
+
 export function BagScreen() {
   const screen = useGame((s) => s.screen);
   const bag = useGame((s) => s.bag);
@@ -332,7 +340,7 @@ export function BagScreen() {
   const dialog = useGame((s) => s.dialog);
   useGame((s) => s.rev);
   useGame((s) => s.lang);
-  const [pocket, setPocket] = useState<"items" | "amulets">("items");
+  const [pocket, setPocket] = useState<Pocket>("items");
   const [cursor, setCursor] = useState(0);
   const [target, setTarget] = useState<ItemId | null>(null);
   const [tCursor, setTCursor] = useState(0);
@@ -394,7 +402,7 @@ export function BagScreen() {
       }
       if (b === "left" || b === "right") {
         sfx("cursor");
-        setPocket((p) => (p === "items" ? "amulets" : "items"));
+        setPocket((p) => POCKETS[(POCKETS.indexOf(p) + (b === "right" ? 1 : POCKETS.length - 1)) % POCKETS.length]);
         setCursor(0);
       } else if (b === "up" || b === "down") {
         sfx("cursor");
@@ -420,6 +428,10 @@ export function BagScreen() {
       void runScript(() => say({ en: "Amulets are thrown at wild creatures during battle.", pt: "Amuletos são jogados em criaturas selvagens durante a batalha." }));
       return;
     }
+    if (ITEMS[id].pocket === "key") {
+      void runScript(() => say(ITEMS[id].desc));
+      return;
+    }
     if (!party.length) {
       void runScript(() => say({ en: "You don't have any creatures yet.", pt: "Você ainda não tem criaturas." }));
       return;
@@ -432,9 +444,9 @@ export function BagScreen() {
   return (
     <ScreenFrame title={tr({ en: "BAG", pt: "BOLSA" })} onBack={back}>
       <div className="tabs">
-        {(["items", "amulets"] as const).map((p) => (
+        {POCKETS.map((p) => (
           <button key={p} className={`tab ${pocket === p ? "on" : ""}`} onClick={() => { setPocket(p); setCursor(0); }}>
-            {p === "items" ? tr({ en: "ITEMS", pt: "ITENS" }) : tr({ en: "AMULETS", pt: "AMULETOS" })}
+            {tr(POCKET_NAMES[p])}
           </button>
         ))}
       </div>

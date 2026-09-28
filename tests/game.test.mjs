@@ -134,3 +134,72 @@ test('a fainted lead is replaced and the reserve can finish the battle', async (
   assert.equal(lead.hp, 0);
   assert.ok(reserve.hp > 0);
 });
+
+const maps = await server.ssrLoadModule('/src/world/maps.ts');
+const { SPECIES } = await server.ssrLoadModule('/src/data/species.ts');
+const { MOVES } = await server.ssrLoadModule('/src/data/moves.ts');
+const { effectiveness } = await server.ssrLoadModule('/src/data/types.ts');
+
+test('people and items stand on walkable tiles', () => {
+  for (const e of [...maps.NPCS, ...maps.GROUND_ITEMS]) {
+    assert.ok(maps.isWalkableTile(e.map, e.x, e.y), `${e.id} on ${e.map} (${e.x},${e.y}) is on "${maps.tileAt(e.map, e.x, e.y)}"`);
+  }
+});
+
+test('every cave ladder is linked and the whole Gruta da Lapinha is reachable from its entrance', () => {
+  const caves = Object.keys(maps.INTERIORS).filter(m => maps.INTERIORS[m].cave);
+  const key = (m, x, y) => `${m},${x},${y}`;
+  // Walk from the 1F entrance through floors and ladders; people and items block.
+  const occupied = new Set([...maps.NPCS, ...maps.GROUND_ITEMS].map(e => key(e.map, e.x, e.y)));
+  const [ex, ey] = maps.interiorDoor('lapinha1');
+  const seen = new Set();
+  const queue = [['lapinha1', ex, ey]];
+  while (queue.length) {
+    const [m, x, y] = queue.pop();
+    if (seen.has(key(m, x, y))) continue;
+    seen.add(key(m, x, y));
+    const link = maps.caveLink(m, x, y);
+    if (link) queue.push([link.map, link.x, link.y]);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      if (maps.isWalkableTile(m, x + dx, y + dy) && !occupied.has(key(m, x + dx, y + dy))) queue.push([m, x + dx, y + dy]);
+    }
+  }
+  const nextToReached = (m, x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(key(m, x + dx, y + dy)));
+  for (const m of caves) {
+    maps.INTERIORS[m].rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === 'H' || ch === 'U') assert.ok(maps.caveLink(m, x, y), `${m} (${x},${y}) ${ch} has no partner`);
+      if ('.HUZ'.includes(ch)) assert.ok(seen.has(key(m, x, y)) || nextToReached(m, x, y), `${m} (${x},${y}) "${ch}" can't be reached`);
+    }));
+    for (const e of [...maps.NPCS, ...maps.GROUND_ITEMS].filter(e => e.map === m)) {
+      assert.ok(nextToReached(m, e.x, e.y), `${e.id} in ${m} can't be reached`);
+    }
+  }
+});
+
+test('species data is consistent and wild tables only use known species', () => {
+  for (const sp of Object.values(SPECIES)) {
+    for (const [, mv] of sp.learnset) assert.ok(MOVES[mv], `${sp.id} learns unknown move ${mv}`);
+    if (sp.evolves) assert.ok(SPECIES[sp.evolves.to], `${sp.id} evolves into unknown ${sp.evolves.to}`);
+  }
+  for (const [map, y] of [['overworld', -50], ['overworld', -10], ['overworld', 30], ['overworld', 50], ['lapinha1', 0], ['lapinha3', 0]]) {
+    for (const slot of maps.encounterTable(map, y)) assert.ok(SPECIES[slot.species], `${map}/${y}: ${slot.species}`);
+  }
+  assert.ok(maps.encounterTable('lapinha1', 0).some(s => s.species === 'morceguinho'));
+});
+
+test('Poison and Ground follow the handheld chart, including immunities', () => {
+  assert.equal(effectiveness('electric', ['poison', 'ground']), 0);
+  assert.equal(effectiveness('ground', ['poison', 'flying']), 0);
+  assert.equal(effectiveness('ground', ['rock']), 2);
+  assert.equal(effectiveness('grass', ['poison', 'flying']), 0.25);
+  assert.equal(effectiveness('rock', ['poison', 'flying']), 2);
+});
+
+test('a move with no effect deals no damage', async () => {
+  // Mud Slap is Ground, and Morceguinho flies.
+  G().set({ party: [Object.assign(createMon('pedrudo', 15), { moves: [{ id: 'mudslap', pp: 10 }] })] });
+  const bat = createMon('morceguinho', 15);
+  const { messages } = await dialogues(() => runBattle({ kind: 'wild', enemy: [bat] }, ui([{ kind: 'move', index: 0 }, { kind: 'run' }])));
+  assert.ok(messages.some(m => /doesn't affect/.test(m)), messages.join(' | '));
+  assert.equal(bat.hp, maxHp(bat));
+});

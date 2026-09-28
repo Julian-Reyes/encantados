@@ -5,13 +5,14 @@ export type ItemId =
   | "amuleto" | "superamuleto"
   | "pocao" | "superpocao"
   | "antidoto" | "pomada" | "desparalisante" | "despertador" | "curatotal"
-  | "reviver";
+  | "reviver"
+  | "fossilgarra" | "fossilpresa";
 
 export interface Item {
   name: L;
   desc: L;
   price: number;
-  pocket: "items" | "amulets";
+  pocket: "items" | "amulets" | "key"; // key items can't be used, sold or tossed
   heal?: number; // HP restored (9999 = full)
   cures?: Status[] | "all";
   revive?: boolean;
@@ -29,6 +30,8 @@ export const ITEMS: Record<ItemId, Item> = {
   despertador: { name: { en: "Wake Bell", pt: "Despertador" }, desc: { en: "Wakes a sleeping creature.", pt: "Acorda uma criatura adormecida." }, price: 250, pocket: "items", cures: ["slp"] },
   curatotal: { name: { en: "Full Cure", pt: "Cura Total" }, desc: { en: "Cures any status problem.", pt: "Cura qualquer problema de status." }, price: 600, pocket: "items", cures: "all" },
   reviver: { name: { en: "Revive", pt: "Reviver" }, desc: { en: "Revives a fainted creature with half HP.", pt: "Revive uma criatura desmaiada com metade dos PV." }, price: 1500, pocket: "items", revive: true },
+  fossilgarra: { name: { en: "Claw Fossil", pt: "Fóssil de Garra" }, desc: { en: "A giant ground sloth's claw from the Lapinha caves. A lab could bring it back to life.", pt: "Garra de uma preguiça-gigante das grutas da Lapinha. Um laboratório poderia revivê-la." }, price: 0, pocket: "key" },
+  fossilpresa: { name: { en: "Fang Fossil", pt: "Fóssil de Presa" }, desc: { en: "A saber-toothed cat's fang from the Lapinha caves. A lab could bring it back to life.", pt: "Presa de um tigre-dentes-de-sabre das grutas da Lapinha. Um laboratório poderia revivê-la." }, price: 0, pocket: "key" },
 };
 
 export const SHOP_TOWN: ItemId[] = ["amuleto", "pocao", "antidoto", "desparalisante", "despertador", "pomada"];

@@ -165,7 +165,7 @@ export async function runBattle(setup: BattleSetup, ui: BattleUI): Promise<Battl
 
   function immuneToStatus(mon: Mon, s: Status) {
     const t = SPECIES[mon.species].types;
-    return (s === "brn" && t.includes("fire")) || (s === "par" && t.includes("electric"));
+    return (s === "brn" && t.includes("fire")) || (s === "par" && t.includes("electric")) || (s === "psn" && t.includes("poison"));
   }
 
   async function inflict(target: Fighter, tSide: Side, s: Status, fromStatusMove: boolean) {
@@ -233,6 +233,10 @@ export async function runBattle(setup: BattleSetup, ui: BattleUI): Promise<Battl
     // Damage
     const types = SPECIES[def.mon.species].types;
     const eff = effectiveness(mv.type, types);
+    if (eff === 0) {
+      await msg({ en: "It doesn't affect {n}...", pt: "Não afeta {n}..." }, { n: N(dSide) });
+      return false;
+    }
     let dmg: number;
     let crit = false;
     if (mv.effect?.kind === "fixedLevel") {
