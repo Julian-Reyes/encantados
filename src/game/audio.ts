@@ -1,6 +1,7 @@
 // Chiptune sound via WebAudio: square/triangle/noise voices, no audio files.
-// Music is a tiny step sequencer; each token in a track string is one eighth note:
-//   "C5" = play, "-" = hold the previous note, "." = rest.
+// Music is a tiny step sequencer; each token in a track string is one step (an eighth note,
+// or a sixteenth for tracks with div: 4): "C5" = play, "-" = hold the previous note, "." = rest.
+// "C5:4" / ".:4" is shorthand for a note or rest lasting 4 steps.
 
 import { G } from "./store";
 
@@ -9,6 +10,8 @@ let master: GainNode;
 let musicBus: GainNode;
 let sfxBus: GainNode;
 let noiseBuf: AudioBuffer;
+type Duty = 0.125 | 0.25 | 0.5;
+const pulses = new Map<Duty, PeriodicWave>();
 
 function ensure(): AudioContext | null {
   if (ctx) {
@@ -30,6 +33,13 @@ function ensure(): AudioContext | null {
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  // Game Boy style pulse channels: Fourier series of a pulse wave at each duty cycle.
+  for (const duty of [0.125, 0.25, 0.5] as Duty[]) {
+    const real = new Float32Array(48);
+    const imag = new Float32Array(48);
+    for (let n = 1; n < 48; n++) real[n] = (2 / (n * Math.PI)) * Math.sin(n * Math.PI * duty);
+    pulses.set(duty, ctx.createPeriodicWave(real, imag));
+  }
   return ctx;
 }
 
@@ -48,13 +58,26 @@ function freq(n: string): number {
   return 440 * Math.pow(2, (semi - 69) / 12);
 }
 
-function tone(bus: GainNode, f: number, t: number, dur: number, type: OscillatorType, vol: number, slide?: number) {
+function tone(bus: GainNode, f: number, t: number, dur: number, type: OscillatorType | Duty, vol: number, slide?: number, vibrato = false) {
   if (!ctx || f <= 0) return;
   const o = ctx.createOscillator();
   const g = ctx.createGain();
-  o.type = type;
+  if (typeof type === "number") o.setPeriodicWave(pulses.get(type)!);
+  else o.type = type;
   o.frequency.setValueAtTime(f, t);
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, slide), t + dur);
+  if (vibrato && dur > 0.3) {
+    // Delayed wobble on held notes, like the Game Boy sound engine.
+    const lfo = ctx.createOscillator();
+    const depth = ctx.createGain();
+    lfo.frequency.value = 6;
+    depth.gain.setValueAtTime(0, t);
+    depth.gain.setValueAtTime(0, t + 0.15);
+    depth.gain.linearRampToValueAtTime(14, t + 0.3);
+    lfo.connect(depth).connect(o.detune);
+    lfo.start(t);
+    lfo.stop(t + dur + 0.02);
+  }
   g.gain.setValueAtTime(0.0001, t);
   g.gain.linearRampToValueAtTime(vol, t + 0.008);
   g.gain.setValueAtTime(vol, t + Math.max(0.01, dur - 0.04));
@@ -124,15 +147,43 @@ export function sfx(name: Sfx) {
 }
 
 // ---------------- Music ----------------
-interface Track {
-  bpm: number;
+interface Voices {
   lead: string;
+  harmony?: string; // second pulse voice, quieter
   bass: string;
   drums?: string; // k = kick, h = hat, s = snare, . = none
-  loop?: boolean;
 }
 
-// All melodies are original compositions for this game.
+interface Track extends Voices {
+  bpm: number;
+  div?: 2 | 4; // steps per beat: 2 = eighths (default), 4 = sixteenths
+  intro?: Voices; // plays once before the body starts looping
+  leadDuty?: Duty;
+  harmonyDuty?: Duty;
+}
+
+const SEMI = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+function up(n: string, semis: number): string {
+  const m = /^([A-G]#?)(\d)$/.exec(n)!;
+  const v = SEMI.indexOf(m[1]) + parseInt(m[2]) * 12 + semis;
+  return SEMI[v % 12] + Math.floor(v / 12);
+}
+
+/** Battle bass: sixteenth-note octave bounce, one root per bar ("A1|B1" splits the bar). */
+function bounce(...bars: string[]): string {
+  return bars
+    .map((bar) => {
+      const roots = bar.split("|");
+      return roots.map((r) => `${r} ${up(r, 12)} `.repeat(8 / roots.length)).join("");
+    })
+    .join("");
+}
+
+const bars = (...b: string[]) => b.join(" ");
+
+// All melodies are original compositions for this game. The battle themes borrow the
+// Game Boy arrangement: a one-shot intro, thin pulse lead plus harmony, a busy sixteenth
+// bass, and a separate theme per kind of opponent.
 const TRACKS: Record<string, Track> = {
   town: {
     bpm: 108,
@@ -158,33 +209,151 @@ const TRACKS: Record<string, Track> = {
       "E2 . B2 . E2 . B2 . D3 . A2 . D3 . A2 . C3 . G2 . D3 . A2 . G2 . D3 . G2 . . .",
     drums: "k . h k s . h . ".repeat(16),
   },
+  // Wild encounter: E minor, urgent.
   battle: {
-    bpm: 168,
-    lead:
-      "A5 - - C6 - - B5 - A5 - E5 - A5 - B5 - C6 - - D6 - - E6 - D6 - C6 - B5 - G5 - " +
-      "A5 - - C6 - - B5 - A5 - E5 - F5 - G5 - A5 - C6 - F6 - E6 - E6 - - - G#5 - B5 - " +
-      "C6 - B5 - A5 - G5 - F5 - G5 - A5 - - - G5 - F5 - E5 - D5 - E5 - F5 - G5 - - - " +
-      "A5 - B5 - C6 - D6 - E6 - - - C6 - - - D6 - - - B5 - - - G#5 - - - E5 - - - ",
-    bass:
-      "A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 F2 F3 F2 F3 F2 F3 F2 F3 G2 G3 G2 G3 G2 G3 G2 G3 " +
-      "A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 F2 F3 F2 F3 F2 F3 F2 F3 E2 E3 E2 E3 E2 E3 E2 E3 " +
-      "F2 F3 F2 F3 F2 F3 F2 F3 E2 E3 E2 E3 E2 E3 E2 E3 D2 D3 D2 D3 D2 D3 D2 D3 C3 C4 C3 C4 C3 C4 C3 C4 " +
-      "F2 F3 F2 F3 F2 F3 F2 F3 G2 G3 G2 G3 G2 G3 G2 G3 E2 E3 E2 E3 E2 E3 E2 E3 E2 E3 E2 E3 E2 E3 E2 E3",
-    drums: "k h s h k k s h ".repeat(16),
+    bpm: 164,
+    div: 4,
+    leadDuty: 0.25,
+    harmonyDuty: 0.125,
+    intro: {
+      lead: bars("E6 D#6 D6 C#6 C6 B5 A#5 A5 G#5 G5 F#5 F5 E5 D#5 D5 C#5", "E5:3 . E5:3 . E5:2 D#5:2 D5:2 C#5:2"),
+      harmony: bars(".:16", "B4:3 . B4:3 . B4:2 A#4:2 A4:2 G#4:2"),
+      bass: bars("E3 D#3 D3 C#3 C3 B2 A#2 A2 G#2 G2 F#2 F2 E2 D#2 D2 C#2", bounce("B1")),
+      drums: bars(".:16", "k . . . k . . . s . h . s . s s"),
+    },
+    lead: bars(
+      "E5:3 B4 E5:2 G5:2 F#5:2 E5:2 D5:2 E5:2", "G5:6 E5:2 C5:4 E5:4",
+      "F#5:3 D5 F#5:2 A5:2 G5:2 F#5:2 E5:2 F#5:2", "D#5:8 F#5:4 B5:4",
+      "E6:3 B5 G5:2 E5:2 B5:3 G5 E5:4", "C6:3 G5 E5:2 C5:2 E5:2 G5:2 C6:2 B5:2",
+      "A5:4 C6:4 B5:4 D#6:4", "E6:8 B5:4 D#5:4",
+      "A5:4 B5:4 C6:4 E6:4", "D6:8 B5:4 G5:4",
+      "C6:4 A5:4 F5:4 A5:4", "B5:8 A5:4 F#5:4",
+      "A5:2 B5:2 C6:2 D6:2 E6:4 C6:4", "D6:2 C6:2 B5:2 A5:2 G5:4 B5:4",
+      "C6:4 E6:4 D6:4 F#6:4", "B5:2 A#5 A5 G#5 G5 F#5 F5 E5:2 D#5:2 .:4",
+    ),
+    harmony: bars(
+      "G4:8 B4:8", "E4:8 G4:8", "A4:8 D5:8", "B4:8 A4:8",
+      "B4:8 G4:8", "G4:8 E5:8", "E4:4 A4:4 D#4:4 F#4:4", "G4:8 F#4:8",
+      "C5:8 E5:8", "B4:8 G4:8", "A4:8 F4:8", "D#5:8 B4:8",
+      "C5:8 A4:8", "B4:8 D5:8", "G4:8 A4:8", "F#4:8 .:8",
+    ),
+    bass: bounce("E2", "C2", "D2", "B1", "E2", "C2", "A1|B1", "E2|B1", "A1", "G1", "F1", "B1", "A1", "G1", "C2|D2", "B1"),
+    drums: "k . h . s . h . k . h k s . h h ".repeat(16),
   },
+  // Trainer battle: A minor, heroic march.
   trainer: {
+    bpm: 170,
+    div: 4,
+    leadDuty: 0.25,
+    harmonyDuty: 0.125,
+    intro: {
+      lead: bars("A6 E6 C6 A5 E6 C6 A5 E5 C6 A5 E5 C5 A5 E5 C5 A4", "E5:2 . E5 E5:2 . E5 G#5:4 B5:4"),
+      harmony: bars(".:16", "B4:2 . B4 B4:2 . B4 E5:4 G#5:4"),
+      bass: bounce("A1", "E2"),
+      drums: bars("k . . . k . . . k . . . k . . .", "s . . s s . . s k . h . s s s s"),
+    },
+    lead: bars(
+      "A5:4 E5:2 A5:2 C6:4 B5:2 A5:2", "F5:4 A5:2 C6:2 F6:6 E6:2",
+      "D6:4 B5:2 G5:2 D6:2 E6:2 D6:2 B5:2", "G#5:8 B5:4 E6:4",
+      "A5:4 E5:2 A5:2 C6:4 D6:2 E6:2", "F6:4 E6:2 D6:2 C6:4 A5:4",
+      "D6:4 F6:4 E6:4 G#5:4", "A5:12 .:4",
+      "C6:2 . C6 E6:2 G6:2 E6:4 C6:4", "B5:2 . B5 D6:2 G6:2 D6:4 B5:4",
+      "C6:2 . C6 E6:2 A6:2 G6:4 E6:4", "G#6:8 E6:4 B5:4",
+      "A5:4 C6:4 F6:4 E6:4", "D6:4 B5:4 G5:4 B5:4",
+      "E6:2 D#6:2 E6:2 F6:2 E6:2 D6:2 C6:2 B5:2", "G#5:4 B5:4 E6:4 .:4",
+    ),
+    harmony: bars(
+      "C5:8 E5:8", "A4:8 C5:8", "B4:8 G4:8", "E5:8 D5:8",
+      "C5:8 E5:8", "A5:8 F5:8", "A5:4 D6:4 B5:4 E5:4", "E5:12 .:4",
+      "E5:8 G5:8", "D5:8 G5:8", "E5:8 C6:8", "B5:8 G#5:8",
+      "F5:8 C6:8", "B5:4 G5:4 D5:4 G5:4", "B5:8 G#5:8", "E5:4 G#5:4 B5:4 .:4",
+    ),
+    bass: bounce("A1", "F1", "G1", "E2", "A1", "F1", "D2|E2", "A1", "C2", "G1", "A1", "E2", "F1", "G1", "E2", "E2"),
+    drums: "k . h . s . h k k . h . s . s s ".repeat(16),
+  },
+  // Rival battle: D minor, cocky and syncopated.
+  rival: {
     bpm: 176,
-    lead:
-      "E5 - E5 - G5 - E5 - A5 - - - G5 - E5 - D5 - D5 - F5 - D5 - G5 - - - F5 - D5 - " +
-      "C5 - E5 - G5 - C6 - B5 - A5 - G5 - E5 - F5 - - - A5 - - - G#5 - - - B5 - - - " +
-      "E5 - E5 - G5 - E5 - A5 - - - G5 - E5 - D5 - D5 - F5 - D5 - G5 - - - F5 - D5 - " +
-      "C6 - B5 - A5 - G5 - F5 - E5 - D5 - C5 - B4 - - - E5 - - - E5 - - - . . . . ",
-    bass:
-      "A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 G2 G3 G2 G3 G2 G3 G2 G3 G2 G3 G2 G3 G2 G3 G2 G3 " +
-      "F2 F3 F2 F3 F2 F3 F2 F3 C3 C4 C3 C4 C3 C4 C3 C4 D3 D4 D3 D4 D3 D4 D3 D4 E2 E3 E2 E3 E2 E3 E2 E3 " +
-      "A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 A2 A3 G2 G3 G2 G3 G2 G3 G2 G3 G2 G3 G2 G3 G2 G3 G2 G3 " +
-      "F2 F3 F2 F3 F2 F3 F2 F3 D2 D3 D2 D3 D2 D3 D2 D3 E2 E3 E2 E3 E2 E3 E2 E3 E2 E3 E2 E3 E2 E3 E2 E3",
-    drums: "k h s h k h s s ".repeat(16),
+    div: 4,
+    leadDuty: 0.125,
+    harmonyDuty: 0.25,
+    intro: {
+      lead: bars("D6:3 D6:3 D6:2 C6:2 A5:2 F5:2 D5:2", "C#5:2 E5:2 G5:2 A#5:2 A5:8"),
+      harmony: bars("A5:3 A5:3 A5:2 .:8", "A4:2 C#5:2 E5:2 G5:2 E5:8"),
+      bass: bars("D2:3 D2:3 D2:2 .:8", bounce("A1")),
+      drums: bars("k . . k . . k . . . . . . . . .", "k . h s . h k . s s s s s s s s"),
+    },
+    lead: bars(
+      "D5:2 . D5 F5:2 A5:2 G5:2 F5:2 E5:2 F5:2", "D5:6 A#4:2 D5:2 F5:2 A#5:4",
+      "C6:2 . C6 A#5:2 A5:2 G5:2 E5:2 G5:4", "A5:8 C#6:4 E6:4",
+      "D6:2 . D6 C6:2 A5:2 F5:2 A5:2 D6:4", "A#5:2 . A#5 A5:2 F5:2 D5:2 F5:2 A#5:4",
+      "G5:4 A#5:4 A5:4 C#6:4", "D6:8 A5:4 F5:4",
+      "F5:4 A5:4 C6:6 A5:2", "E5:4 G5:4 C6:6 G5:2",
+      "D5:4 G5:4 A#5:6 G5:2", "C#5:4 E5:4 A5:8",
+      "A#5:2 A5:2 G5:2 F5:2 A#5:4 D6:4", "C6:2 A#5:2 A5:2 G5:2 C6:4 E6:4",
+      "C#6:2 . C#6 E6:2 A6:2 G6:2 E6:2 C#6:4", "A5:2 . A5 A5:2 . A5 A5:2 A5:2 A5:4",
+    ),
+    harmony: bars(
+      "A4:8 D5:8", "A#4:8 F4:8", "E5:8 C5:8", "E5:8 A5:8",
+      "A5:8 F5:8", "F5:8 D5:8", "D5:8 E5:8", "A5:8 D5:8",
+      "C5:8 F5:8", "C5:8 E5:8", "A#4:8 D5:8", "A4:8 C#5:8",
+      "D5:8 F5:8", "E5:8 G5:8", "A5:8 E5:8", "C#5:8 E5:8",
+    ),
+    bass: bounce("D2", "A#1", "C2", "A1", "D2", "A#1", "G1|A1", "D2", "F1", "C2", "G1", "A1", "A#1", "C2", "A1", "A1"),
+    drums: "k . h s . h k . k . h s . h s s ".repeat(16),
+  },
+  // Arena leader: C minor into E-flat major, heavy and epic.
+  leader: {
+    bpm: 152,
+    div: 4,
+    leadDuty: 0.25,
+    harmonyDuty: 0.125,
+    intro: {
+      lead: bars(
+        "C6 B5 A#5 A5 G#5 G5 F#5 F5 E5 D#5 D5 C#5 C5 B4 A#4 A4",
+        "G#4:2 . G#4 G#4:2 . G#4 G#4:4 A#4:4", "C5:2 . C5 C5:2 . C5 D5:4 D#5:4", "D5:4 F5:4 G5:8",
+      ),
+      harmony: bars(".:16", "D#4:2 . D#4 D#4:2 . D#4 D#4:4 F4:4", "G4:2 . G4 G4:2 . G4 A#4:4 C5:4", "B4:4 D5:4 D5:8"),
+      bass: bars("C3 B2 A#2 A2 G#2 G2 F#2 F2 E2 D#2 D2 C#2 C2 B1 A#1 A1", bounce("G#1", "C2", "G1")),
+      drums: bars(".:16", "k . . k k . . k s . s . s . s .", "k . . k k . . k s . s . s . s .", "s s s s s s s s k . . . k . . ."),
+    },
+    lead: bars(
+      "C5:4 D#5:2 G5:2 C6:6 A#5:2", "G#5:4 G5:2 D#5:2 C5:6 D#5:2",
+      "D5:4 F5:2 A#5:2 D6:6 C6:2", "B5:8 G5:4 D5:4",
+      "C6:4 D6:2 D#6:2 G6:6 F6:2", "D#6:4 D6:2 C6:2 G#5:6 C6:2",
+      "C6:4 G#5:4 B5:4 D6:4", "C6:12 .:4",
+      "G5:2 A#5:2 D#6:4 D6:2 C6:2 A#5:4", "F5:2 A#5:2 D6:4 C6:2 A#5:2 A5:4",
+      "G#5:2 C6:2 D#6:4 D6:2 C6:2 G#5:4", "G5:8 B5:4 D6:4",
+      "D#6:2 . D#6 D6:2 C6:2 A#5:2 G5:2 D#6:4", "D6:2 . D6 C6:2 A#5:2 F5:2 A#5:2 D6:4",
+      "C6:2 . C6 D6:2 D#6:2 F6:2 D#6:2 C6:4", "B5:2 C6:2 D6:2 F6:2 G6:4 G5:4",
+    ),
+    harmony: bars(
+      "G4:8 D#5:8", "D#5:8 G#4:8", "A#4:8 F5:8", "D5:8 B4:8",
+      "G5:8 A#5:8", "C6:8 D#5:8", "G#5:8 G5:8", "G5:12 .:4",
+      "D#5:8 G5:8", "D5:8 F5:8", "D#5:8 C5:8", "D5:8 G5:8",
+      "G5:8 D#5:8", "F5:8 D5:8", "G#5:16", "G5:8 B5:4 D5:4",
+    ),
+    bass: bounce("C2", "G#1", "A#1", "G1", "C2", "G#1", "F1|G1", "C2", "D#2", "A#1", "G#1", "G1", "D#2", "A#1", "G#1", "G1"),
+    drums: "k . h . s . h . k k h . s . h s ".repeat(16),
+  },
+  // Plays after beating a trainer, while the prize money is handed over.
+  victoryTrainer: {
+    bpm: 140,
+    div: 4,
+    leadDuty: 0.25,
+    harmonyDuty: 0.125,
+    lead: bars(
+      "E5:2 G5:2 C6:4 G5:2 E5:2 G5:4", "F5:2 A5:2 C6:4 A5:2 F5:2 A5:4",
+      "G5:2 B5:2 D6:4 B5:2 G5:2 D6:4", "C6:8 E6:4 .:4",
+      "A5:2 C6:2 E6:4 D6:2 C6:2 A5:4", "A5:2 C6:2 F6:4 E6:2 D6:2 C6:4",
+      "B5:2 D6:2 G6:4 F6:2 D6:2 B5:4", "C6:4 G5:4 C6:4 .:4",
+    ),
+    harmony: bars(
+      "C5:8 E5:8", "A4:8 C5:8", "B4:8 D5:8", "E5:12 .:4",
+      "E5:8 C5:8", "F5:8 A5:8", "G5:8 D5:8", "E5:12 .:4",
+    ),
+    bass: bounce("C2", "F1", "G1", "C2", "A1", "F1", "G1", "C2"),
+    drums: "k . h . s . h . k . h . s . h . ".repeat(8),
   },
   lab: {
     bpm: 100,
@@ -215,10 +384,25 @@ let nextTime = 0;
 let jingleUntil = 0;
 
 function parse(s: string): string[] {
-  return s.trim().split(/\s+/);
+  const out: string[] = [];
+  for (const tok of s.trim().split(/\s+/)) {
+    const [n, d] = tok.split(":");
+    out.push(n);
+    for (let i = 1; i < (d ? parseInt(d) : 1); i++) out.push(n === "." ? "." : "-");
+  }
+  return out;
 }
 
-function startTrack(name: string) {
+function parseVoices(v: Voices) {
+  return {
+    lead: parse(v.lead),
+    harmony: v.harmony ? parse(v.harmony) : [],
+    bass: parse(v.bass),
+    drums: v.drums ? parse(v.drums) : [],
+  };
+}
+
+function startTrack(name: string, withIntro = true) {
   const c = ensure();
   if (!c) return;
   stopTimer();
@@ -227,22 +411,27 @@ function startTrack(name: string) {
   step = 0;
   nextTime = Math.max(c.currentTime + 0.05, jingleUntil);
   const tr = TRACKS[name];
-  const lead = parse(tr.lead);
-  const bass = parse(tr.bass);
-  const drums = tr.drums ? parse(tr.drums) : [];
-  const len = lead.length;
-  const eighth = 60 / tr.bpm / 2;
+  const body = parseVoices(tr);
+  let part = tr.intro && withIntro ? parseVoices(tr.intro) : body;
+  const stepLen = 60 / tr.bpm / (tr.div ?? 2);
+  const leadType = tr.leadDuty ?? "square";
+  const harmonyType = tr.harmonyDuty ?? 0.25;
   const schedule = () => {
     if (!ctx) return;
     while (nextTime < ctx.currentTime + 0.25) {
-      const i = step % len;
-      playStep(lead, i, nextTime, eighth, "square", 0.13, musicBus);
-      playStep(bass, i % bass.length, nextTime, eighth, "triangle", 0.3, musicBus);
-      const d = drums[i % (drums.length || 1)];
+      if (step >= part.lead.length) {
+        part = body;
+        step = 0;
+      }
+      const i = step;
+      playStep(part.lead, i, nextTime, stepLen, leadType, 0.13, musicBus, true);
+      if (part.harmony.length) playStep(part.harmony, i % part.harmony.length, nextTime, stepLen, harmonyType, 0.07, musicBus, true);
+      playStep(part.bass, i % part.bass.length, nextTime, stepLen, "triangle", 0.3, musicBus);
+      const d = part.drums[i % (part.drums.length || 1)];
       if (d === "k") tone(musicBus, 120, nextTime, 0.08, "sine", 0.5, 40);
       else if (d === "s") noise(musicBus, nextTime, 0.08, 0.25, 2500);
       else if (d === "h") noise(musicBus, nextTime, 0.03, 0.08, 8000, "highpass");
-      nextTime += eighth;
+      nextTime += stepLen;
       step++;
     }
   };
@@ -250,12 +439,12 @@ function startTrack(name: string) {
   timer = window.setInterval(schedule, 60);
 }
 
-function playStep(notes: string[], i: number, t: number, eighth: number, type: OscillatorType, vol: number, bus: GainNode) {
+function playStep(notes: string[], i: number, t: number, stepLen: number, type: OscillatorType | Duty, vol: number, bus: GainNode, vibrato = false) {
   const n = notes[i];
   if (!n || n === "-" || n === ".") return;
   let len = 1;
   while (notes[i + len] === "-") len++;
-  tone(bus, freq(n), t, eighth * len * 0.92, type, vol);
+  tone(bus, freq(n), t, stepLen * len * 0.92, type, vol, undefined, vibrato);
 }
 
 function stopTimer() {
@@ -306,7 +495,7 @@ export function jingle(name: keyof typeof JINGLES): Promise<void> {
   jingleUntil = t0 + dur;
   return new Promise((r) =>
     setTimeout(() => {
-      if (resume && current === resume && G().music) startTrack(resume);
+      if (resume && current === resume && G().music) startTrack(resume, false);
       r();
     }, dur * 1000 + 60),
   );

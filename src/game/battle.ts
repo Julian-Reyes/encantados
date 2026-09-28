@@ -344,6 +344,8 @@ export async function runBattle(setup: BattleSetup, ui: BattleUI): Promise<Battl
     if (!wild && setup.trainer) {
       music(null);
       void jingle("victory");
+      // Starts once the fanfare ends and loops through the prize dialog.
+      music("victoryTrainer");
       await say(tr({ en: "{p} defeated {t}!", pt: "{p} derrotou {t}!" }, { p: G().playerName, t: trainerName }));
       await say(tr(setup.trainer.win));
       const money = setup.trainer.reward;

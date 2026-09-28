@@ -320,7 +320,7 @@ async function rivalRoute() {
     kind: "trainer",
     enemy: team,
     trainer: { id: "rival", name: { en: "Rival {rival}", pt: "Rival {rival}" }, reward: 280, win: { en: "What?! No way! I picked the wrong one!", pt: "O quê?! Não pode ser! Escolhi o errado!" } },
-    music: "trainer",
+    music: "rival",
   });
   if (res.outcome === "win") {
     setFlag("rivalBeaten");

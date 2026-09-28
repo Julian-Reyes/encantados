@@ -392,7 +392,7 @@ export const NPCS: NpcDef[] = [
       win: { en: "Incredible! You cut right through my defenses!", pt: "Incrível! Você atravessou minha defesa!" },
       after: { en: "Route 2 is open for you now. Keep polishing that team!", pt: "A Rota 2 está aberta para você. Continue lapidando essa equipe!" },
       sight: 0,
-      music: "trainer",
+      music: "leader",
       badge: "badgeTopaz",
     },
   },
