@@ -6,7 +6,7 @@ import type { L } from "../data/types";
 
 export type Lang = "en" | "pt";
 export type Dir = "up" | "down" | "left" | "right";
-export type MapId = "overworld" | "home" | "rivalhouse" | "lab" | "center1" | "mart1" | "center2" | "mart2";
+export type MapId = "overworld" | "home" | "rivalhouse" | "lab" | "center1" | "mart1" | "center2" | "mart2" | "arena1";
 
 export interface Spot {
   map: MapId;
@@ -54,6 +54,9 @@ export interface GameState extends SaveData {
   sound: boolean;
   music: boolean;
   lowGfx: boolean;
+  /** Amulets sitting on the Healing Center machine; they glow while the heal jingle plays. */
+  healSlots: number;
+  healGlow: boolean;
   touch: boolean;
   rev: number;
   preview: SpeciesId | null;
@@ -94,6 +97,8 @@ export const useGame = create<GameState>((set) => ({
   sound: true,
   music: true,
   lowGfx: false,
+  healSlots: 0,
+  healGlow: false,
   touch: isTouch,
   rev: 0,
   preview: null,

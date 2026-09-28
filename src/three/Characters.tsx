@@ -39,6 +39,8 @@ const LOOKS: Record<Look, Style> = {
   aide: { skin: "#d9a57a", hair: "#1a1a1a", hairStyle: "short", shirt: "#6a8aa0", pants: "#3a3a4a", coat: "#f5f5f5", glasses: true },
   sister: { skin: "#f0c49a", hair: "#7a4a2a", hairStyle: "long", shirt: "#5ab07a", pants: "#5ab07a", skirt: true },
   man: { skin: "#d09a70", hair: "#2a1a10", hairStyle: "short", shirt: "#8a4a2a", pants: "#3a3a4a" },
+  miner: { skin: "#c68a5a", hair: "#3a2418", hairStyle: "short", shirt: "#8a6a4a", pants: "#4a3a2a", hat: { color: "#a86a2a", kind: "hard" }, pack: "#6a5a4a" },
+  leader: { skin: "#d9a57a", hair: "#2a1a10", hairStyle: "spiky", shirt: "#f2b632", pants: "#4a3a2a", coat: "#7a4fa0", beard: "#2a1a10" },
 };
 
 function getActor(id?: string): Actor | undefined {

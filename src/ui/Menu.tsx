@@ -593,6 +593,9 @@ export function AlmanaqueScreen() {
 }
 
 // ---------------------------------------------------------------- trainer card
+/** Badge flags in slot order on the trainer card. */
+const BADGE_FLAGS = ["badgeTopaz"];
+
 export function CardScreen() {
   const s = useGame();
   useKeys((b) => {
@@ -632,7 +635,7 @@ export function CardScreen() {
         </div>
         <div className="badges">
           {Array.from({ length: 8 }, (_, i) => (
-            <span key={i} className="badge-slot" />
+            <span key={i} className={`badge-slot ${BADGE_FLAGS[i] && s.flags[BADGE_FLAGS[i]] ? "earned" : ""}`} />
           ))}
         </div>
       </div>

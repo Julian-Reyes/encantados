@@ -7,7 +7,7 @@ import type * as THREE from "three";
 import { INTERIORS } from "../world/maps";
 import { flag, useGame, type MapId } from "../game/store";
 import { STARTERS } from "../data/species";
-import { Bx, Cy, Sph, glow } from "./prims";
+import { Bx, Cy, Sph, glow, mat, GEO } from "./prims";
 import { AmuletModel } from "./Amulet";
 import { CreatureModel } from "./Creatures";
 
@@ -77,18 +77,7 @@ function Furniture({ ch, x, y, map }: { ch: string; x: number; y: number; map: M
         </group>
       );
     case "h":
-      return (
-        <group position={[x, 0, y]}>
-          <Bx p={[0, 0.45, -0.1]} s={[0.9, 0.9, 0.6]} c="#d0d0d8" />
-          {[-0.25, 0, 0.25].map((hx) =>
-            [-0.2, 0.05].map((hz) => (
-              <group key={`${hx},${hz}`} position={[hx, 0.97, hz - 0.1]} scale={0.07}>
-                <AmuletModel />
-              </group>
-            )),
-          )}
-        </group>
-      );
+      return <HealMachine x={x} y={y} />;
     case "p":
       return (
         <group position={[x, 0, y]}>
@@ -123,9 +112,29 @@ function Furniture({ ch, x, y, map }: { ch: string; x: number; y: number; map: M
       );
     case "a":
       return <StarterTable x={x} y={y} />;
+    case "o":
+      return <mesh geometry={GEO.rock} material={mat("#9c8a70")} position={[x, 0.35, y]} scale={[0.5, 0.45, 0.48]} rotation={[0, (x * 7 + y * 3) % 6, 0]} castShadow receiveShadow />;
     default:
       return null;
   }
+}
+
+/** Six slots, filled in party order (top row left to right, then bottom). */
+const HEAL_SLOTS = [-0.2, 0.05].flatMap((hz) => [-0.25, 0, 0.25].map((hx) => [hx, hz] as const));
+
+function HealMachine({ x, y }: { x: number; y: number }) {
+  const n = useGame((s) => s.healSlots);
+  const lit = useGame((s) => s.healGlow);
+  return (
+    <group position={[x, 0, y]}>
+      <Bx p={[0, 0.45, -0.1]} s={[0.9, 0.9, 0.6]} c="#d0d0d8" />
+      {HEAL_SLOTS.slice(0, n).map(([hx, hz]) => (
+        <group key={`${hx},${hz}`} position={[hx, 0.97, hz - 0.1]} scale={0.07}>
+          <AmuletModel glowing={lit} />
+        </group>
+      ))}
+    </group>
+  );
 }
 
 function StarterTable({ x, y }: { x: number; y: number }) {

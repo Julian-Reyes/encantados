@@ -5,7 +5,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { BUILDINGS, GROUND_ITEMS, OVERWORLD, OW_H, OW_W, SIGNS, type Building } from "../world/maps";
+import { BUILDINGS, GROUND_ITEMS, OW_H, OW_W, OW_Y0, SIGNS, owTile, type Building } from "../world/maps";
 import { useGame } from "../game/store";
 import { mat, glow, Bx, Cy, Cn, Sph, GEO } from "./prims";
 import { AmuletModel } from "./Amulet";
@@ -54,7 +54,7 @@ const GROUND_COLORS: Record<string, string[]> = {
 function useTerrain() {
   return useMemo(() => {
     const tiles: [number, number, string][] = [];
-    for (let y = 0; y < OW_H; y++) for (let x = 0; x < OW_W; x++) tiles.push([x, y, OVERWORLD[y][x]]);
+    for (let y = OW_Y0; y < OW_H; y++) for (let x = 0; x < OW_W; x++) tiles.push([x, y, owTile(x, y)]);
 
     // Ground tiles (everything except water gets a grass/dirt/stone block).
     const groundTiles = tiles.filter(([, , t]) => t !== "~" && t !== "=");
@@ -78,9 +78,9 @@ function useTerrain() {
     // Trees: map trees cast shadows; a decorative forest ring outside the map doesn't.
     const inner: [number, number][] = tiles.filter(([, , t]) => t === "T").map(([x, y]) => [x, y]);
     const outer: [number, number][] = [];
-    for (let y = -5; y < OW_H + 5; y++)
+    for (let y = OW_Y0 - 5; y < OW_H + 5; y++)
       for (let x = -6; x < OW_W + 6; x++) {
-        if (x >= 0 && x < OW_W && y >= 0 && y < OW_H) continue;
+        if (x >= 0 && x < OW_W && y >= OW_Y0 && y < OW_H) continue;
         if (hash(x, y, 3) < 0.72) outer.push([x, y]);
       }
     const trunkGeo = new THREE.CylinderGeometry(0.1, 0.14, 1, 6);
@@ -95,7 +95,7 @@ function useTerrain() {
         const jz = (hash(x, y, 5) - 0.5) * 0.25;
         const tall = 0.9 + h * 0.5;
         setInst(trunks, i, x + jx, tall / 2, y + jz, 1, tall, 1);
-        const village = y < 18;
+        const village = y >= 0 && y < 18;
         // Ipê trees (pink / yellow) brighten the villages; cerrado greens elsewhere.
         const colorPick = hash(x, y, 7);
         let c = ["#3f8f3a", "#4c9c3e", "#357f35", "#5aa845"][Math.floor(h * 4)];
@@ -159,7 +159,7 @@ function useTerrain() {
     const rails = makeInstanced(GEO.box, mat("#f4ead8"), fenceTiles.length * 2, { cast: true });
     fenceTiles.forEach(([x, y], i) => {
       setInst(posts, i, x, 0.3, y, 0.1, 0.6, 0.1);
-      const vertical = OVERWORLD[y - 1]?.[x] === "F" || OVERWORLD[y + 1]?.[x] === "F";
+      const vertical = owTile(x, y - 1) === "F" || owTile(x, y + 1) === "F";
       for (let k = 0; k < 2; k++) setInst(rails, i * 2 + k, x, 0.22 + k * 0.22, y, vertical ? 0.05 : 1, 0.06, vertical ? 1 : 0.05);
     });
 
@@ -184,7 +184,7 @@ function Sparkles() {
   const ref = useRef<THREE.InstancedMesh>(null);
   const spots = useMemo(() => {
     const out: [number, number][] = [];
-    for (let y = 0; y < OW_H; y++) for (let x = 0; x < OW_W; x++) if (OVERWORLD[y][x] === "~" && hash(x, y, 11) < 0.35) out.push([x, y]);
+    for (let y = OW_Y0; y < OW_H; y++) for (let x = 0; x < OW_W; x++) if (owTile(x, y) === "~" && hash(x, y, 11) < 0.35) out.push([x, y]);
     return out;
   }, []);
   useFrame(({ clock }) => {
@@ -351,8 +351,8 @@ function FountainOne({ x, z }: { x: number; z: number }) {
 
 function Fountain() {
   const spots: [number, number][] = [];
-  for (let y = 0; y < OW_H; y++)
-    for (let x = 0; x < OW_W; x++) if (OVERWORLD[y][x] === "O" && OVERWORLD[y][x - 1] !== "O" && OVERWORLD[y - 1]?.[x] !== "O") spots.push([x + 0.5, y + 0.5]);
+  for (let y = OW_Y0; y < OW_H; y++)
+    for (let x = 0; x < OW_W; x++) if (owTile(x, y) === "O" && owTile(x - 1, y) !== "O" && owTile(x, y - 1) !== "O") spots.push([x + 0.5, y + 0.5]);
   return (
     <>
       {spots.map(([x, z]) => (
@@ -408,8 +408,8 @@ export function Overworld() {
         <primitive key={i} object={o} />
       ))}
       {/* Big backdrop ground beyond the edges */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[OW_W / 2, -0.21, OW_H / 2]} receiveShadow>
-        <planeGeometry args={[OW_W + 60, OW_H + 60]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[OW_W / 2, -0.21, (OW_Y0 + OW_H) / 2]} receiveShadow>
+        <planeGeometry args={[OW_W + 60, OW_H - OW_Y0 + 60]} />
         <meshLambertMaterial color="#5f9e44" />
       </mesh>
       <Sparkles />

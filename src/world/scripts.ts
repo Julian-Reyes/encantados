@@ -156,6 +156,21 @@ async function trainerBattle(def: NpcDef, spotted: boolean) {
   const r = await startBattle({ kind: "trainer", enemy: team, trainer: { id: def.id, name: t.name, reward: t.reward, win: t.win }, music: t.music });
   if (r.outcome === "win") setFlag("beat_" + def.id);
   await afterBattle(r);
+  if (r.outcome === "win" && t.badge) await awardBadge(def, t.badge);
+}
+
+const BADGES: Record<string, L> = {
+  badgeTopaz: { en: "Topaz Badge", pt: "Insígnia Topázio" },
+};
+
+async function awardBadge(def: NpcDef, badge: string) {
+  const t = def.trainer!;
+  await speak(t.name, { en: "You've earned this. Take it!", pt: "Você mereceu. Pegue!" });
+  setFlag(badge);
+  refreshNpcVisibility();
+  void jingle("caught");
+  await say(tr({ en: "{player} received the {b}!", pt: "{player} recebeu a {b}!" }, { b: tr(BADGES[badge]) }));
+  await speak(t.name, t.after);
 }
 
 export async function whiteout() {
@@ -386,7 +401,7 @@ const NPC_SCRIPTS: Record<string, (def: NpcDef) => Promise<void>> = {
     }
     if (await yesno(tr({ en: "Shall I heal your creatures?", pt: "Posso curar suas criaturas?" }))) {
       await say(tr({ en: "OK, I'll take your creatures for a moment.", pt: "Certo, vou pegar suas criaturas por um momento." }));
-      await healParty();
+      await healParty(true);
       G().set({ heal: { map: rt.map, x: 5, y: 3, facing: "up" } });
       await say(tr({ en: "Thank you for waiting! Your creatures are fully healed.", pt: "Obrigada por esperar! Suas criaturas estão totalmente curadas." }));
     }
@@ -415,11 +430,21 @@ const NPC_SCRIPTS: Record<string, (def: NpcDef) => Promise<void>> = {
   },
 };
 
-async function healParty() {
+async function healParty(machine = false) {
   for (const m of G().party) healMon(m);
   touch();
   music(null);
+  if (machine) {
+    // Place one amulet per creature on the machine, then light them up for the jingle.
+    for (let i = 1; i <= Math.min(G().party.length, 6); i++) {
+      G().set({ healSlots: i });
+      sfx("click");
+      await wait(350);
+    }
+    G().set({ healGlow: true });
+  }
   await jingle("heal");
+  if (machine) G().set({ healSlots: 0, healGlow: false });
   music(mapMusic(rt.map, rt.player.y));
 }
 
@@ -450,6 +475,7 @@ const FURNITURE: Record<string, L> = {
   O: { en: "A stone fountain. The water sparkles in the sun.", pt: "Uma fonte de pedra. A água brilha ao sol." },
   r: { en: "A big boulder. Something might be napping under it...", pt: "Uma pedra grande. Algo pode estar cochilando embaixo..." },
   "~": { en: "The water is calm and clear.", pt: "A água está calma e cristalina." },
+  o: { en: "A chunk of raw stone. Flecks of topaz glitter in it.", pt: "Um bloco de pedra bruta. Pontinhos de topázio brilham nele." },
 };
 
 export function onInteract(x: number, y: number) {
@@ -497,7 +523,6 @@ export function onBuildingDoor(b: Building) {
     }
     sfx("bump");
     if (b.kind === "church") await say({ en: "The church doors are closed. The bells ring every Sunday morning.", pt: "As portas da igreja estão fechadas. Os sinos tocam todo domingo de manhã." });
-    else if (b.kind === "arena") await say({ en: "The Arena is locked. A note says: \"Out on a journey. — The Leader\"", pt: "A Arena está trancada. Um bilhete diz: \"Em viagem. — O Líder\"" });
     else await say({ en: "It's locked.", pt: "Está trancada." });
   });
 }

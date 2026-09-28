@@ -68,7 +68,7 @@ export function loadMap(map: MapId, x: number, y: number, facing: Dir) {
 
 export function mapMusic(map: MapId, y: number): string {
   if (map !== "overworld") return INTERIORS[map].music;
-  return y >= 18 && y <= 55 ? "route" : "town";
+  return y < 0 || (y >= 18 && y <= 55) ? "route" : "town";
 }
 
 export function refreshNpcVisibility() {

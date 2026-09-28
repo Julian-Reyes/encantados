@@ -68,7 +68,14 @@ const KEYMAP: Record<string, Button> = {
   Escape: "start", KeyM: "start", Tab: "start",
 };
 
+// Hot reload re-runs installKeyboard; drop the old listeners so each key isn't handled twice.
+let listeners: AbortController | null = (globalThis as { __keyListeners?: AbortController }).__keyListeners ?? null;
+
 export function installKeyboard() {
+  listeners?.abort();
+  listeners = new AbortController();
+  (globalThis as { __keyListeners?: AbortController }).__keyListeners = listeners;
+  const { signal } = listeners;
   window.addEventListener("keydown", (e) => {
     const t = e.target as HTMLElement | null;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
@@ -81,11 +88,11 @@ export function installKeyboard() {
       // Arrow repeat is handy for scrolling menus; A/B/Start must not auto-repeat.
       if (!e.repeat || input.uiActive()) input.press(b);
     }
-  });
+  }, { signal });
   window.addEventListener("keyup", (e) => {
     const b = KEYMAP[e.code];
     if (b === "up" || b === "down" || b === "left" || b === "right") input.up(b);
     if (b === "b") input.setB(false);
-  });
-  window.addEventListener("blur", () => input.clear());
+  }, { signal });
+  window.addEventListener("blur", () => input.clear(), { signal });
 }
