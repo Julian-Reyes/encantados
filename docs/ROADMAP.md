@@ -145,3 +145,9 @@ These are needed by every stage.
 - Leader **Marina**: Piabinha at 18 and a Pirarucão-line creature at 21. She gives the Aquamarine Badge and her MT.
 
 **New content for this stage:** 5–7 species, 3–5 moves, and an Aquamarine badge flag added to `BADGE_FLAGS`.
+
+## Polish backlog
+
+Small changes to existing features, not tied to a stage.
+
+- **Bigger badge gems.** Make the centre gems on the trainer-card badges even larger. Their radius is the `m.stone(r)` argument for each badge in `src/ui/Badges.tsx`. Grow the gold `circle(r)` setting behind each stone to match, and check that the Amethyst triangle still fits its setting.
