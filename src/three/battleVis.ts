@@ -16,7 +16,7 @@ export interface SideVis {
 export const bv = {
   player: { species: null, anim: null, t0: 0, type: null, hidden: true } as SideVis,
   enemy: { species: null, anim: null, t0: 0, type: null, hidden: true } as SideVis,
-  amulet: { visible: false, anim: null as AnimKind | null, t0: 0, shakes: 0 },
+  amulet: { visible: false, anim: null as AnimKind | null, t0: 0, shakes: 0, great: false },
 };
 
 export const ANIM_MS: Record<AnimKind, number> = {

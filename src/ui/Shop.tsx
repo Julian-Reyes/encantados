@@ -118,7 +118,7 @@ export function ShopScreen() {
   if (screen !== "shop" || (mode === "root" && !qty)) return null;
   return (
     <div className="shop panel">
-      <div className="shop-money">R${money}</div>
+      <div className="shop-money">{tr({ en: "{player}'s money", pt: "Dinheiro de {player}" })}: R${money}</div>
       <div className="item-list">
         {list.map((id, i) => (
           <div key={id} className={`row ${i === cursor ? "sel" : ""}`} onPointerDown={() => { setCursor(i); setQty({ id, n: 1 }); }}>

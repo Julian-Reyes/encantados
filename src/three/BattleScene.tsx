@@ -169,6 +169,8 @@ function SideCreature({ side }: { side: Side }) {
 /** Thrown amulet during catch attempts (flies at the foe, drops, shakes). */
 function CatchAmulet() {
   const ref = useRef<THREE.Group>(null);
+  const normal = useRef<THREE.Group>(null);
+  const great = useRef<THREE.Group>(null);
   const stars = useRef<THREE.Group>(null);
   useFrame(() => {
     const g = ref.current;
@@ -214,10 +216,17 @@ function CatchAmulet() {
     bv.amulet.visible = visible && k !== "break";
     g.visible = visible;
     if (stars.current) stars.current.visible = showStars;
+    if (normal.current) normal.current.visible = !bv.amulet.great;
+    if (great.current) great.current.visible = bv.amulet.great;
   });
   return (
     <group ref={ref} scale={0.14} visible={false}>
-      <AmuletModel />
+      <group ref={normal}>
+        <AmuletModel />
+      </group>
+      <group ref={great} visible={false}>
+        <AmuletModel great />
+      </group>
       <group ref={stars}>
         {[0, 1, 2].map((i) => (
           <mesh key={i} geometry={GEO.cone4} material={glow("#ffe66a")} scale={0.6} />

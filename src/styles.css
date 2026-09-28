@@ -43,6 +43,9 @@ small,.dim { opacity:.75; }
 .exp-track { height:6px; background:#3a3a44; border-radius:3px; overflow:hidden; margin-top:4px; }
 .exp-fill { height:100%; background:#4ab4f0; }
 .caught-mark { color:var(--sel); margin-left:4px; }
+.team-balls { display:flex; gap:5px; margin-top:6px; }
+.team-ball { width:12px; height:12px; border-radius:50%; border:1.5px solid #3a3a4a; background:linear-gradient(#e0342c 0 45%, #3a3a4a 45% 55%, #f7f3ea 55%); }
+.team-ball.out { background:#b8b8c0; opacity:.6; }
 .battle-bar { position:absolute; left:50%; bottom:12px; transform:translateX(-50%); width:min(760px,calc(100% - 24px)); display:flex; gap:8px; }
 .has-touch .battle-bar,.has-touch .battle-list { bottom:170px; }
 .battle-prompt { flex:1; padding:14px 18px; font-size:21px; }

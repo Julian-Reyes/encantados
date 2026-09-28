@@ -435,7 +435,9 @@ async function healParty(machine = false) {
   touch();
   music(null);
   if (machine) {
-    // Place one amulet per creature on the machine, then light them up for the jingle.
+    // Clear the display amulets, place one per creature, then flash them for the jingle.
+    G().set({ healSlots: 0 });
+    await wait(250);
     for (let i = 1; i <= Math.min(G().party.length, 6); i++) {
       G().set({ healSlots: i });
       sfx("click");
@@ -444,7 +446,7 @@ async function healParty(machine = false) {
     G().set({ healGlow: true });
   }
   await jingle("heal");
-  if (machine) G().set({ healSlots: 0, healGlow: false });
+  if (machine) G().set({ healSlots: 6, healGlow: false });
   music(mapMusic(rt.map, rt.player.y));
 }
 

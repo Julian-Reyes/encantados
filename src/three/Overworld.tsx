@@ -378,7 +378,7 @@ function GroundItems() {
     <>
       {GROUND_ITEMS.filter((i) => i.map === "overworld" && !flags["item_" + i.id]).map((i) => (
         <group key={i.id} position={[i.x, 0.16, i.y]} scale={0.15} rotation={[0.3, 0.4, 0]}>
-          <AmuletModel />
+          <AmuletModel great={i.item === "superamuleto"} />
         </group>
       ))}
     </>

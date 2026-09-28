@@ -54,7 +54,7 @@ export interface GameState extends SaveData {
   sound: boolean;
   music: boolean;
   lowGfx: boolean;
-  /** Amulets sitting on the Healing Center machine; they glow while the heal jingle plays. */
+  /** Amulets on the Healing Center machine: 6 as decoration, the party's count while healing (flashing during the jingle). */
   healSlots: number;
   healGlow: boolean;
   touch: boolean;
@@ -97,7 +97,7 @@ export const useGame = create<GameState>((set) => ({
   sound: true,
   music: true,
   lowGfx: false,
-  healSlots: 0,
+  healSlots: 6,
   healGlow: false,
   touch: isTouch,
   rev: 0,

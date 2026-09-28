@@ -32,12 +32,14 @@ export interface BattleSetup {
 
 export interface BattleUI {
   setActive(side: Side, mon: Mon | null): void;
-  anim(kind: AnimKind, side: Side, opts?: { type?: TypeId }): Promise<void>;
+  anim(kind: AnimKind, side: Side, opts?: { type?: TypeId; great?: boolean }): Promise<void>;
   hp(side: Side): Promise<void>;
   xp(from: number, to: number): Promise<void>;
   refresh(): void;
   chooseAction(mon: Mon, canRun: boolean): Promise<Action>;
   choosePartyForced(): Promise<number>;
+  /** Optional switch before the trainer's next creature comes out; -1 = keep the current one. */
+  chooseShift(): Promise<number>;
 }
 
 export interface BattleResult {
@@ -323,6 +325,15 @@ export async function runBattle(setup: BattleSetup, ui: BattleUI): Promise<Battl
       markSeen(E.mon.species);
       participants = new Set([P.mon.uid]);
       await msg({ en: "{t} is about to send out {n}.", pt: "{t} vai enviar {n}." }, { t: trainerName, n: displayName(E.mon) });
+      if (party.some((m) => m !== P.mon && m.hp > 0) && (await yesno(tr({ en: "Will {p} change creatures?", pt: "{p} vai trocar de criatura?" }, { p: G().playerName })))) {
+        const idx = await ui.chooseShift();
+        if (idx >= 0) {
+          await msg({ en: "{n}, come back!", pt: "{n}, volte!" }, { n: displayName(P.mon) });
+          await ui.anim("recall", "player");
+          pIdx = idx;
+          await sendOut(party[idx]);
+        }
+      }
       ui.setActive("enemy", E.mon);
       sfx("send");
       await ui.anim("send", "enemy");
@@ -363,7 +374,7 @@ export async function runBattle(setup: BattleSetup, ui: BattleUI): Promise<Battl
     addItem(item, -1);
     await msg({ en: "{p} threw an {i}!", pt: "{p} jogou um {i}!" }, { p: G().playerName, i: tr(ITEMS[item].name) });
     sfx("throw");
-    await ui.anim("throw", "enemy");
+    await ui.anim("throw", "enemy", { great: item === "superamuleto" });
     if (!wild) {
       await ui.anim("break", "enemy");
       await say(tr({ en: "The trainer blocked the Amulet!", pt: "O treinador bloqueou o Amuleto!" }), tr({ en: "Don't be a thief!", pt: "Não seja ladrão!" }));

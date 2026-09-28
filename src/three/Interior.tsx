@@ -125,14 +125,29 @@ const HEAL_SLOTS = [-0.2, 0.05].flatMap((hz) => [-0.25, 0, 0.25].map((hx) => [hx
 function HealMachine({ x, y }: { x: number; y: number }) {
   const n = useGame((s) => s.healSlots);
   const lit = useGame((s) => s.healGlow);
+  const glowRef = useRef<THREE.Group>(null);
+  // While healing, a glowing copy of the amulets blinks on over the normal ones.
+  useFrame(({ clock }) => {
+    if (glowRef.current) glowRef.current.visible = Math.floor(clock.elapsedTime * 6) % 2 === 0;
+  });
+  const slots = HEAL_SLOTS.slice(0, n);
   return (
     <group position={[x, 0, y]}>
       <Bx p={[0, 0.45, -0.1]} s={[0.9, 0.9, 0.6]} c="#d0d0d8" />
-      {HEAL_SLOTS.slice(0, n).map(([hx, hz]) => (
+      {slots.map(([hx, hz]) => (
         <group key={`${hx},${hz}`} position={[hx, 0.97, hz - 0.1]} scale={0.07}>
-          <AmuletModel glowing={lit} />
+          <AmuletModel />
         </group>
       ))}
+      {lit && (
+        <group ref={glowRef}>
+          {slots.map(([hx, hz]) => (
+            <group key={`${hx},${hz}`} position={[hx, 0.97, hz - 0.1]} scale={0.075}>
+              <AmuletModel glowing />
+            </group>
+          ))}
+        </group>
+      )}
     </group>
   );
 }

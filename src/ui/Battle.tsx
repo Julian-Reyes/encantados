@@ -19,7 +19,7 @@ type Menu =
   | { kind: "action" }
   | { kind: "moves" }
   | { kind: "bag" }
-  | { kind: "party"; forced: boolean; item?: ItemId };
+  | { kind: "party"; forced: boolean; item?: ItemId; shift?: boolean };
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -95,6 +95,7 @@ function BattleInner() {
         s.anim = kind;
         s.t0 = now();
         s.type = opts?.type ?? null;
+        if (kind === "throw") bv.amulet.great = !!opts?.great;
         if (kind === "send") sfx("send");
         await wait(ANIM_MS[kind]);
         if (kind === "faint" || kind === "recall") s.hidden = true;
@@ -136,6 +137,11 @@ function BattleInner() {
       choosePartyForced() {
         setCursor(0);
         setMenu({ kind: "party", forced: true });
+        return new Promise<number>((res) => (resolveForced.current = res));
+      },
+      chooseShift() {
+        setCursor(0);
+        setMenu({ kind: "party", forced: false, shift: true });
         return new Promise<number>((res) => (resolveForced.current = res));
       },
     };
@@ -184,12 +190,27 @@ function BattleInner() {
       return;
     }
     sfx("select");
-    if (menu.forced) {
+    if (menu.forced || menu.shift) {
       setMenu(null);
       const r = resolveForced.current;
       resolveForced.current = null;
       r?.(i);
     } else act({ kind: "switch", index: i });
+  }
+
+  /** Backs out of the party list to wherever it was opened from. */
+  function leaveParty() {
+    if (menu?.kind !== "party") return;
+    sfx("back");
+    if (menu.shift) {
+      setMenu(null);
+      const r = resolveForced.current;
+      resolveForced.current = null;
+      r?.(-1);
+      return;
+    }
+    setCursor(menu.item ? 0 : 2);
+    setMenu(menu.item ? { kind: "bag" } : { kind: "action" });
   }
 
   function chooseAction(i: number) {
@@ -269,16 +290,9 @@ function BattleInner() {
       } else if (menu.kind === "party") {
         const n = party.length + (menu.forced ? 0 : 1);
         if (b === "a") {
-          if (cursor >= party.length) {
-            sfx("back");
-            setCursor(menu.item ? 0 : 2);
-            setMenu(menu.item ? { kind: "bag" } : { kind: "action" });
-          } else choosePartyMember(cursor);
-        } else if (b === "b" && !menu.forced) {
-          sfx("back");
-          setCursor(menu.item ? 0 : 2);
-          setMenu(menu.item ? { kind: "bag" } : { kind: "action" });
-        } else if (b === "up" || b === "down") {
+          if (cursor >= party.length) leaveParty();
+          else choosePartyMember(cursor);
+        } else if (b === "b" && !menu.forced) leaveParty(); else if (b === "up" || b === "down") {
           sfx("cursor");
           setCursor((c) => moveCursor(c, b, n));
         }
@@ -312,6 +326,13 @@ function BattleInner() {
           </div>
           <HpBar hp={disp.current.enemy} max={eMax} />
           {wild && G().caught.includes(enemy.species) && <span className="caught-mark" title="caught">◓</span>}
+          {!wild && (
+            <div className="team-balls">
+              {currentBattle()!.enemy.map((m) => (
+                <span key={m.uid} className={`team-ball ${m.hp > 0 ? "" : "out"}`} />
+              ))}
+            </div>
+          )}
         </div>
       )}
       {player && !bv.player.hidden && (
@@ -424,7 +445,7 @@ function BattleInner() {
             </div>
           ))}
           {!menu.forced && (
-            <div className={`row ${cursor === party.length ? "sel" : ""}`} onPointerDown={() => { sfx("back"); setMenu(menu.item ? { kind: "bag" } : { kind: "action" }); }}>
+            <div className={`row ${cursor === party.length ? "sel" : ""}`} onPointerDown={leaveParty}>
               <span className="cursor">{cursor === party.length ? "▶" : ""}</span>
               {tr({ en: "CANCEL", pt: "CANCELAR" })}
             </div>
