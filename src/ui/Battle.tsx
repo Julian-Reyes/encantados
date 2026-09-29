@@ -57,6 +57,7 @@ function BattleInner() {
   const [cursor, setCursor] = useState(0);
   const [moveCursorI, setMoveCursor] = useState(0);
   const [warn, setWarn] = useState<string | null>(null);
+  const [flash, setFlash] = useState(0);
   const resolveAction = useRef<((a: Action) => void) | null>(null);
   const resolveForced = useRef<((i: number) => void) | null>(null);
   const started = useRef(false);
@@ -97,7 +98,19 @@ function BattleInner() {
         s.type = opts?.type ?? null;
         if (kind === "throw") bv.amulet.great = !!opts?.great;
         if (kind === "send") sfx("send");
+        // Camera beats: lean toward whoever is acting, shake on impact.
+        const t = now();
+        if (kind === "attack" || kind === "special" || kind === "status" || kind === "send" || kind === "faint") Object.assign(bv.cam, { focus: side, focusT0: t });
+        else if (kind === "throw") Object.assign(bv.cam, { focus: "enemy", focusT0: t });
+        if (kind === "hit") {
+          const eff = opts?.eff ?? 1;
+          Object.assign(bv.fx, { side, type: opts?.type ?? null, t0: t, eff, crit: !!opts?.crit });
+          bv.cam.shake = eff > 1 || opts?.crit ? 0.14 : eff < 1 ? 0.02 : 0.06;
+          bv.cam.shakeT0 = t;
+          if (eff > 1 || opts?.crit) setFlash((n) => n + 1);
+        }
         await wait(ANIM_MS[kind]);
+        if (kind === "hit" || kind === "faint" || kind === "send" || kind === "caught" || kind === "break") bv.cam.focus = null;
         if (kind === "faint" || kind === "recall") s.hidden = true;
         if (kind === "absorb") s.hidden = true;
         if (kind === "break") s.hidden = false;
@@ -317,6 +330,7 @@ function BattleInner() {
 
   return (
     <div className="battle-ui">
+      {flash > 0 && <div key={flash} className="screen-flash" />}
       {enemy && !bv.enemy.hidden && (
         <div className="infobox enemy panel">
           <div className="info-top">

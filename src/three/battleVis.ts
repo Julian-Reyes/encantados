@@ -17,6 +17,12 @@ export const bv = {
   player: { species: null, anim: null, t0: 0, type: null, hidden: true } as SideVis,
   enemy: { species: null, anim: null, t0: 0, type: null, hidden: true } as SideVis,
   amulet: { visible: false, anim: null as AnimKind | null, t0: 0, shakes: 0, great: false },
+  /** Camera beats: which side to lean toward, and a decaying shake. */
+  cam: { focus: null as Side | null, focusT0: 0, shake: 0, shakeT0: 0 },
+  /** The latest impact, for hit bursts and the screen flash. `eff` is the type multiplier. */
+  fx: { side: null as Side | null, type: null as TypeId | null, t0: -99, eff: 1, crit: false },
+  /** When the stage appeared, for the opening camera sweep. */
+  intro: { t0: 0 },
 };
 
 export const ANIM_MS: Record<AnimKind, number> = {
@@ -29,4 +35,7 @@ export const now = () => performance.now() / 1000;
 export function resetVis() {
   for (const s of ["player", "enemy"] as Side[]) Object.assign(bv[s], { species: null, anim: null, t0: 0, type: null, hidden: true });
   Object.assign(bv.amulet, { visible: false, anim: null, t0: 0, shakes: 0 });
+  Object.assign(bv.cam, { focus: null, focusT0: 0, shake: 0, shakeT0: 0 });
+  Object.assign(bv.fx, { side: null, type: null, t0: -99, eff: 1, crit: false });
+  bv.intro.t0 = now();
 }

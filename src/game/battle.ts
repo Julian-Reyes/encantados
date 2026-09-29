@@ -32,7 +32,7 @@ export interface BattleSetup {
 
 export interface BattleUI {
   setActive(side: Side, mon: Mon | null): void;
-  anim(kind: AnimKind, side: Side, opts?: { type?: TypeId; great?: boolean }): Promise<void>;
+  anim(kind: AnimKind, side: Side, opts?: { type?: TypeId; great?: boolean; eff?: number; crit?: boolean }): Promise<void>;
   hp(side: Side): Promise<void>;
   xp(from: number, to: number): Promise<void>;
   refresh(): void;
@@ -256,7 +256,7 @@ export async function runBattle(setup: BattleSetup, ui: BattleUI): Promise<Battl
     dmg = Math.min(dmg, def.mon.hp);
     sfx(eff > 1 ? "hitSuper" : eff < 1 ? "hitWeak" : "hit");
     def.mon.hp -= dmg;
-    await Promise.all([ui.anim("hit", dSide), ui.hp(dSide)]);
+    await Promise.all([ui.anim("hit", dSide, { type: mv.type, eff, crit }), ui.hp(dSide)]);
     if (crit) await msg({ en: "A critical hit!", pt: "Um golpe crítico!" });
     if (mv.effect?.kind !== "fixedLevel") {
       if (eff > 1) await msg({ en: "It's super effective!", pt: "É super eficaz!" });

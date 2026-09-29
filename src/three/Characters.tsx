@@ -53,7 +53,15 @@ function getActor(id?: string): Actor | undefined {
   return id === "player" ? rt.player : rt.npcs.get(id);
 }
 
-export function Humanoid({ look, actorId }: { look: Look; actorId?: string }) {
+/** Arm angles (radians, positive swings forward/up), body lean and hop that override the idle pose. Mutated by the owner each frame. */
+export interface HumanPose {
+  lArm: number;
+  rArm: number;
+  lean: number;
+  hop: number;
+}
+
+export function Humanoid({ look, actorId, pose }: { look: Look; actorId?: string; pose?: HumanPose }) {
   const st = LOOKS[look];
   const lLeg = useRef<THREE.Group>(null);
   const rLeg = useRef<THREE.Group>(null);
@@ -72,6 +80,14 @@ export function Humanoid({ look, actorId }: { look: Look; actorId?: string }) {
     if (lArm.current) lArm.current.rotation.x = -sw * 0.8;
     if (rArm.current) rArm.current.rotation.x = sw * 0.8;
     if (body.current) body.current.position.y = actor?.moving ? Math.abs(Math.cos(ph)) * 0.04 : Math.sin(clock.elapsedTime * 2) * 0.006;
+    if (pose) {
+      if (lArm.current) lArm.current.rotation.x = -pose.lArm;
+      if (rArm.current) rArm.current.rotation.x = -pose.rArm;
+      if (body.current) {
+        body.current.rotation.x = pose.lean;
+        body.current.position.y += pose.hop;
+      }
+    }
   });
   const shoes = st.shoes ?? "#3a2a24";
   return (

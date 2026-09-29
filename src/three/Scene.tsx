@@ -10,7 +10,7 @@ import { isCave } from "../world/maps";
 import { Overworld } from "./Overworld";
 import { InteriorView } from "./Interior";
 import { ActorView, Humanoid } from "./Characters";
-import { BattleScene, BATTLE_ORIGIN } from "./BattleScene";
+import { BattleScene, BATTLE_ORIGIN, battleCamera, stageOf, STAGE_LIGHT } from "./BattleScene";
 import { CreatureModel } from "./Creatures";
 import { MaterialOverride, Sph, glow } from "./prims";
 import { currentEvo } from "../game/flow";
@@ -42,24 +42,36 @@ function Rig() {
   const target = useMemo(() => new THREE.Vector3(), []);
   const fog = useMemo(() => new THREE.Fog("#a8dcf7", 20, 44), []);
   const bg = useMemo(() => new THREE.Color("#a8dcf7"), []);
+  const hemiRef = useRef<THREE.HemisphereLight>(null);
+  const lightFrom = useMemo(() => new THREE.Vector3(5, 12, 6), []);
   scene.fog = fog;
   scene.background = bg;
 
-  useFrame(({ clock, size }) => {
+  useFrame(({ clock, size }, dt) => {
     const s = G();
+    const hemi = hemiRef.current;
+    const l0 = light.current;
+    // Battles set their own light; everywhere else uses the daylight defaults.
+    lightFrom.set(5, 12, 6);
+    if (hemi) hemi.intensity = 1.25;
+    if (l0) {
+      l0.intensity = 1.9;
+      l0.color.set("#fff4dd");
+    }
     if (s.mode === "battle") {
-      // Fit both platforms horizontally, including on portrait screens.
-      // Close framing on 16:10 or wider; narrower screens pull back along the same angle
-      // so the view stays as wide as it is at 16:10.
-      const k = Math.max(1, 1.6 / (size.width / size.height));
-      camera.position.set(BATTLE_ORIGIN.x + 0.2, 0.7 + 1.05 * k, BATTLE_ORIGIN.z - 0.6 + 5.9 * k);
-      camera.lookAt(BATTLE_ORIGIN.x + 0.25, 0.7, BATTLE_ORIGIN.z - 0.6);
+      const dist = battleCamera(camera, size.width / size.height, dt);
       target.copy(BATTLE_ORIGIN);
-      const sky = isCave(rt.map) ? "#15110d" : "#bfe8ff";
-      bg.set(sky);
-      fog.near = 30;
-      fog.far = 70;
-      fog.color.set(sky);
+      const st = STAGE_LIGHT[stageOf(rt.map)];
+      bg.set(st.sky);
+      fog.near = dist + st.fog[0];
+      fog.far = dist + st.fog[1];
+      fog.color.set(st.sky);
+      lightFrom.set(...st.sunFrom);
+      if (hemi) hemi.intensity = st.hemi;
+      if (l0) {
+        l0.intensity = st.sun;
+        l0.color.set(st.sunColor);
+      }
     } else if (s.mode === "evolve") {
       camera.position.set(EVO_ORIGIN.x, 1.0, EVO_ORIGIN.z + 3.4);
       camera.lookAt(EVO_ORIGIN.x, 0.6, EVO_ORIGIN.z);
@@ -103,7 +115,7 @@ function Rig() {
     }
     const l = light.current;
     if (l) {
-      l.position.set(target.x + 5, 12, target.z + 6);
+      l.position.set(target.x + lightFrom.x, lightFrom.y, target.z + lightFrom.z);
       l.target.position.copy(target);
       l.target.updateMatrixWorld();
     }
@@ -111,7 +123,7 @@ function Rig() {
 
   return (
     <>
-      <hemisphereLight args={["#dff2ff", "#6a8a4a", 1.25]} />
+      <hemisphereLight ref={hemiRef} args={["#dff2ff", "#6a8a4a", 1.25]} />
       <ambientLight intensity={0.25} />
       <directionalLight
         ref={light}

@@ -30,6 +30,8 @@ small,.dim { opacity:.75; }
 /* battle */
 .battle-ui { position:absolute; inset:0; z-index:30; pointer-events:none; }
 .battle-ui > * { pointer-events:auto; }
+.battle-ui > .screen-flash { position:absolute; inset:0; background:#fff; pointer-events:none; opacity:0; animation:screen-flash .32s ease-out; }
+@keyframes screen-flash { 0% { opacity:.75; } 100% { opacity:0; } }
 .infobox { position:absolute; width:min(300px,46vw); padding:8px 12px; font-size:18px; }
 .infobox.enemy { left:16px; top:16px; }
 .infobox.player { right:16px; bottom:150px; }
