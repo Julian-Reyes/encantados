@@ -1,6 +1,27 @@
 # Encantados
 
-A browser creature-collecting RPG built with React, TypeScript, React Three Fiber and procedural low-poly models. Explore Vila Pequi, Cidade Ipê, Routes 1–4, the Gruta da Lapinha caves and Serra do Cipó, choose a starter, battle trainers, and fill the bilingual Almanaque.
+**A 3D creature-collecting RPG that runs in the browser, set in a folklore-flavoured Brazil.** Leave your hometown with a starter, catch and raise creatures based on Brazilian fauna and legends, battle trainers and Arena Leaders, and fill a bilingual (English/Portuguese) Almanaque.
+
+**[▶ Play in your browser](https://julian-reyes.github.io/encantados/)**: no install, works with keyboard or touch.
+
+![Serra do Cipó, a town below a waterfall](docs/screenshots/serra-do-cipo.jpg)
+
+| | |
+| --- | --- |
+| ![A battle against Pirarucão in Marina's pool arena](docs/screenshots/battle.jpg) | ![Marina's arena: stepping stones and currents](docs/screenshots/pool-arena.jpg) |
+| ![Route 4 outside the Gruta da Lapinha](docs/screenshots/route-4.jpg) | ![A battle against Canelão on Route 4](docs/screenshots/battle-canelao.jpg) |
+
+## Tech highlights
+
+- **React Three Fiber and three.js.** The overworld, interiors, caves and battle sets are rendered in real time. Terrain, trees and grass use instanced meshes, so thousands of tiles cost a few dozen draw calls.
+- **No asset files for art or sound.** Every creature, character and building is modelled procedurally in TypeScript from primitive shapes. The music and sound effects come from a small WebAudio chiptune synthesizer.
+- **Data-driven world.** Maps are ASCII layouts. NPCs, trainers, signs, items and encounter tables are plain data, and story events are async scripts that lock the player while they run. Puzzles such as water currents and cave ladders are tile rules.
+- **Turn-based battle engine** with type effectiveness (including immunities), stat stages, status conditions, catching, experience, move learning, evolution and teachable MTs.
+- **Bilingual:** every line of text exists in English and Portuguese.
+- **Regression tests** (`node --test`) load the real game modules. They check battle flow, saves, map reachability, puzzle traps, and backwards-compatible saves.
+- **One-file build:** `npm run build` inlines scripts, styles and fonts into a single `dist/index.html`. It's deployed to GitHub Pages by a GitHub Actions workflow.
+
+## Run it locally
 
 ```sh
 npm install
@@ -43,3 +64,7 @@ Route 3 climbs from Route 2 to the Gruta da Lapinha. The cave's north tunnel ope
 Automated checks cover dialogue sequencing, battle entry, exhausted parties, trainer rewards, catching into storage, leveling, save/load, type immunities, species data, and map data (everyone stands somewhere walkable, every cave ladder is paired and the whole cave can be reached, Route 4 and Serra do Cipó can be reached, and no current in Marina's arena can trap you), MT compatibility, and saves made before the map grew north. Browser checks use the production HTML in headless Chrome; this does not establish performance on a 2017 MacBook Pro or audio quality on physical speakers.
 
 Pixelify Sans and Press Start 2P are bundled under the SIL Open Font License. Notices are in `src/assets/fonts` and embedded in the generated HTML.
+
+## About
+
+Encantados is a fan-made project inspired by the classic handheld creature RPGs. All creatures, characters, places, music and models are original. © 2026 Julian Reyes. All rights reserved.
