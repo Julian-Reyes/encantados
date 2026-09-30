@@ -15,7 +15,7 @@ import {
 } from "./maps";
 import type { ItemId } from "../data/items";
 import {
-  rt, actor, blocked, dirVec, exclaim, exteriorExit, face, faceToward, fadeIn, fadeOut, interiorEntry, itemAt,
+  rt, actor, blocked, dirVec, exclaim, opposite, exteriorExit, face, faceToward, fadeIn, fadeOut, interiorEntry, itemAt,
   loadMap, mapMusic, npcAt, npcDefsFor, refreshNpcVisibility, runScript, signAt, slide, walk, warp, wait,
 } from "./runtime";
 
@@ -170,10 +170,14 @@ async function trainerBattle(def: NpcDef, spotted: boolean) {
   const t = def.trainer!;
   const a = actor(def.id);
   const p = rt.player;
+  // A trainer who walks up to you goes back to their post afterwards, so they never wall off a narrow path.
+  const post = a.facing;
+  let steps = 0;
   if (spotted) {
     await exclaim(def.id);
     const dist = Math.abs(p.x - a.x) + Math.abs(p.y - a.y);
-    if (dist > 1) await walk(def.id, a.facing, dist - 1);
+    steps = Math.max(0, dist - 1);
+    if (steps) await walk(def.id, post, steps);
   }
   faceToward(def.id, p.x, p.y);
   faceToward("player", a.x, a.y);
@@ -187,6 +191,10 @@ async function trainerBattle(def: NpcDef, spotted: boolean) {
   if (r.outcome === "win") setFlag("beat_" + def.id);
   await afterBattle(r);
   if (r.outcome === "win" && t.badge) await awardBadge(def, t.badge);
+  if (r.outcome === "win" && steps) {
+    await walk(def.id, opposite(post), steps);
+    face(def.id, post);
+  }
 }
 
 const BADGES: Record<string, L> = {

@@ -315,6 +315,19 @@ test('Marina\'s pool arena: everyone can be reached and no current traps you', (
     const [x, y] = k.split(',').map(Number);
     assert.ok(poolReach([x, y], occupied).has(key(...door)), `stuck at (${x},${y})`);
   }
+  // Trainers who spot you walk up to you and back to their post afterwards. Wherever they
+  // could stop, the walk out and back is clear, and once they're back nobody is trapped.
+  const V = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  for (const n of npcs.filter(n => n.trainer?.sight)) {
+    const [dx, dy] = V[n.facing];
+    for (let i = 2; i <= n.trainer.sight; i++) {
+      const px = n.x + dx * i, py = n.y + dy * i;
+      if (!maps.isWalkableTile('arena2', px, py) || occupied.has(key(px, py))) break;
+      if (!reached.has(key(px, py))) continue;
+      for (let j = 1; j < i; j++) assert.ok(maps.isWalkableTile('arena2', n.x + dx * j, n.y + dy * j), `${n.id} can walk to you at (${px},${py})`);
+      assert.ok(poolReach([px, py], occupied).has(key(...door)), `after ${n.id} walks back, (${px},${py}) can still reach the door`);
+    }
+  }
   // Not trivially straight: a straight walk up the middle can't reach the leader's platform.
   const [dx] = door;
   let y = door[1];
@@ -353,4 +366,20 @@ test('a save made before Route 4 existed still loads onto the same spot', async 
   assert.deepEqual(doors.V, [16, -67]);
   assert.deepEqual(doors.Q, [6, -66]);
   assert.equal(maps.buildingForInterior(loaded.heal.map).letter, 'Q');
+});
+
+test('trainers who walk up to you have a clear path there and back', () => {
+  const key = (m, x, y) => `${m},${x},${y}`;
+  const V = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const things = [...maps.NPCS, ...maps.GROUND_ITEMS, ...maps.SIGNS];
+  for (const n of maps.NPCS.filter(n => n.trainer?.sight)) {
+    const others = new Set(things.filter(e => e !== n && (!e.visible || e.visible({}))).map(e => key(e.map, e.x, e.y)));
+    const [dx, dy] = V[n.facing];
+    for (let i = 1; i <= n.trainer.sight; i++) {
+      const x = n.x + dx * i, y = n.y + dy * i;
+      // Sight stops at the first blocked tile, so only the open stretch matters.
+      if (!maps.isWalkableTile(n.map, x, y)) break;
+      assert.ok(!others.has(key(n.map, x, y)), `${n.id}'s path is blocked at (${x},${y})`);
+    }
+  }
 });
