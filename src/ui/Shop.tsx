@@ -5,7 +5,7 @@ import { G, addItem, touch, tr, useGame } from "../game/store";
 import { say, ask, yesno } from "../game/dialog";
 import { sfx } from "../game/audio";
 import { runScript } from "../world/runtime";
-import { ITEMS, SHOP_CITY, SHOP_TOWN, type ItemId } from "../data/items";
+import { ITEMS, SHOP_CIPO, SHOP_CITY, SHOP_TOWN, type ItemId } from "../data/items";
 import { displayName, maxHp } from "../game/mon";
 import { MonIcon, StatusTag } from "./common";
 import { useKeys, moveCursor } from "./useKeys";
@@ -20,8 +20,8 @@ export function ShopScreen() {
   const [mode, setMode] = useState<"root" | "buy" | "sell">("root");
   const [cursor, setCursor] = useState(0);
   const [qty, setQty] = useState<{ id: ItemId; n: number } | null>(null);
-  const stock = kind === "city" ? SHOP_CITY : SHOP_TOWN;
-  const sellList = (Object.keys(bag) as ItemId[]).filter((id) => (bag[id] ?? 0) > 0 && ITEMS[id].pocket !== "key");
+  const stock = kind === "city" ? SHOP_CITY : kind === "cipo" ? SHOP_CIPO : SHOP_TOWN;
+  const sellList = (Object.keys(bag) as ItemId[]).filter((id) => (bag[id] ?? 0) > 0 && ITEMS[id].pocket !== "key" && ITEMS[id].pocket !== "mts");
   const list = mode === "buy" ? stock : sellList;
   const active = screen === "shop" && !dialog;
 

@@ -107,6 +107,8 @@ export function Title() {
 function areaName(): string {
   if (rt.map === "overworld") {
     const y = rt.player.y;
+    if (y < -91) return "SERRA DO CIPÓ";
+    if (y < -72) return tr({ en: "ROUTE 4", pt: "ROTA 4" });
     if (y < -36) return tr({ en: "ROUTE 3", pt: "ROTA 3" });
     if (y < 0) return tr({ en: "ROUTE 2", pt: "ROTA 2" });
     if (y < 18) return "CIDADE IPÊ";
@@ -126,6 +128,9 @@ function areaName(): string {
     lapinha1: { en: "GRUTA DA LAPINHA 1F", pt: "GRUTA DA LAPINHA 1º" },
     lapinha2: { en: "GRUTA DA LAPINHA B1F", pt: "GRUTA DA LAPINHA S1" },
     lapinha3: { en: "GRUTA DA LAPINHA B2F", pt: "GRUTA DA LAPINHA S2" },
+    center4: { en: "HEALING CENTER", pt: "CENTRO DE CURA" },
+    mart3: { en: "SHOP", pt: "LOJA" },
+    arena2: { en: "SERRA DO CIPÓ ARENA", pt: "ARENA DA SERRA DO CIPÓ" },
   };
   return tr(names[rt.map]).toUpperCase();
 }

@@ -26,11 +26,11 @@ export interface Move {
 export type MoveId =
   | "tackle" | "scratch" | "growl" | "tailwhip" | "quickattack" | "sandattack" | "headbutt"
   | "ember" | "smokescreen" | "flameclaw" | "flamewheel"
-  | "bubble" | "withdraw" | "bite" | "waterpulse"
-  | "vinewhip" | "sleeppowder" | "razorleaf" | "absorb"
+  | "bubble" | "withdraw" | "bite" | "waterpulse" | "aquajet" | "bubblebeam" | "waterfall"
+  | "vinewhip" | "sleeppowder" | "razorleaf" | "absorb" | "megadrain"
   | "gust" | "wingattack"
   | "stringshot" | "bugbite" | "stunspore" | "silverwind"
-  | "defensecurl" | "rockthrow" | "rockslide"
+  | "defensecurl" | "rockthrow" | "rockslide" | "rocktomb"
   | "sparkjolt" | "thunderwave" | "spark"
   | "peck" | "hypnosis" | "nightshade" | "shadowclaw"
   | "poisonsting" | "poisonfang"
@@ -55,11 +55,15 @@ export const MOVES: Record<MoveId, Move> = {
   bubble: { name: { en: "Bubbles", pt: "Bolhas" }, type: "water", cat: "special", power: 40, acc: 100, pp: 30, effect: { kind: "stat", target: "foe", stat: "spe", stages: -1, chance: 10 }, desc: { en: "May lower Speed.", pt: "Pode reduzir a Velocidade." } },
   withdraw: { name: { en: "Shell Up", pt: "Encascar" }, type: "water", cat: "status", power: 0, acc: 0, pp: 40, effect: { kind: "stat", target: "self", stat: "def", stages: 1 }, desc: { en: "Raises Defense.", pt: "Aumenta a Defesa." } },
   bite: { name: { en: "Bite", pt: "Mordida" }, type: "dark", cat: "physical", power: 60, acc: 100, pp: 25, effect: { kind: "flinch", chance: 30 }, desc: { en: "May make the foe flinch.", pt: "Pode fazer o alvo hesitar." } },
+  aquajet: { name: { en: "Current Rush", pt: "Correnteza" }, type: "water", cat: "physical", power: 40, acc: 100, pp: 20, priority: 1, desc: { en: "Rides a rush of water. Always strikes first.", pt: "Avança numa correnteza. Sempre ataca primeiro." } },
+  bubblebeam: { name: { en: "Bubble Jet", pt: "Jato de Bolhas" }, type: "water", cat: "special", power: 65, acc: 100, pp: 20, effect: { kind: "stat", target: "foe", stat: "spe", stages: -1, chance: 10 }, desc: { en: "A jet of bubbles. May lower Speed.", pt: "Um jato de bolhas. Pode reduzir a Velocidade." } },
+  waterfall: { name: { en: "Cascade", pt: "Cachoeira" }, type: "water", cat: "physical", power: 80, acc: 100, pp: 15, effect: { kind: "flinch", chance: 20 }, desc: { en: "Charges like a waterfall. May make the foe flinch.", pt: "Investe como uma cachoeira. Pode fazer o alvo hesitar." } },
   waterpulse: { name: { en: "River Pulse", pt: "Pulso do Rio" }, type: "water", cat: "special", power: 65, acc: 100, pp: 20, desc: { en: "A pulse of river water.", pt: "Um pulso de água do rio." } },
 
   vinewhip: { name: { en: "Vine Lash", pt: "Chicote de Cipó" }, type: "grass", cat: "physical", power: 45, acc: 100, pp: 25, desc: { en: "Whips with thin vines.", pt: "Chicoteia com cipós." } },
   sleeppowder: { name: { en: "Drowsy Dust", pt: "Pó do Sono" }, type: "grass", cat: "status", power: 0, acc: 75, pp: 15, effect: { kind: "status", status: "slp" }, desc: { en: "Puts the foe to sleep.", pt: "Faz o alvo dormir." } },
   razorleaf: { name: { en: "Leaf Blade", pt: "Folha Navalha" }, type: "grass", cat: "physical", power: 55, acc: 95, pp: 25, highCrit: true, desc: { en: "High critical-hit ratio.", pt: "Alta chance de crítico." } },
+  megadrain: { name: { en: "Deep Sap", pt: "Seiva Forte" }, type: "grass", cat: "special", power: 50, acc: 100, pp: 15, effect: { kind: "drain" }, desc: { en: "Restores half the damage dealt.", pt: "Recupera metade do dano causado." } },
   absorb: { name: { en: "Sap Sip", pt: "Beber Seiva" }, type: "grass", cat: "special", power: 30, acc: 100, pp: 25, effect: { kind: "drain" }, desc: { en: "Restores half the damage dealt.", pt: "Recupera metade do dano causado." } },
 
   gust: { name: { en: "Gust", pt: "Rajada" }, type: "flying", cat: "special", power: 40, acc: 100, pp: 35, desc: { en: "Whips up a gust of wind.", pt: "Levanta uma rajada de vento." } },
@@ -72,6 +76,7 @@ export const MOVES: Record<MoveId, Move> = {
 
   defensecurl: { name: { en: "Curl Up", pt: "Enrolar" }, type: "normal", cat: "status", power: 0, acc: 0, pp: 40, effect: { kind: "stat", target: "self", stat: "def", stages: 1 }, desc: { en: "Raises Defense.", pt: "Aumenta a Defesa." } },
   rockthrow: { name: { en: "Pebble Toss", pt: "Arremesso de Pedra" }, type: "rock", cat: "physical", power: 50, acc: 90, pp: 15, desc: { en: "Hurls small rocks.", pt: "Arremessa pedrinhas." } },
+  rocktomb: { name: { en: "Rock Tomb", pt: "Tumba de Pedra" }, type: "rock", cat: "physical", power: 60, acc: 95, pp: 15, effect: { kind: "stat", target: "foe", stat: "spe", stages: -1, chance: 100 }, desc: { en: "Boxes the foe in with rocks. Lowers Speed.", pt: "Cerca o alvo com pedras. Reduz a Velocidade." } },
   rockslide: { name: { en: "Landslide", pt: "Deslizamento" }, type: "rock", cat: "physical", power: 75, acc: 90, pp: 10, effect: { kind: "flinch", chance: 30 }, desc: { en: "May make the foe flinch.", pt: "Pode fazer o alvo hesitar." } },
 
   sparkjolt: { name: { en: "Zap", pt: "Choquinho" }, type: "electric", cat: "special", power: 40, acc: 100, pp: 30, effect: { kind: "status", status: "par", chance: 10 }, desc: { en: "May paralyze the foe.", pt: "Pode paralisar o alvo." } },

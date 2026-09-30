@@ -68,6 +68,7 @@ export function loadMap(map: MapId, x: number, y: number, facing: Dir) {
 
 export function mapMusic(map: MapId, y: number): string {
   if (map !== "overworld") return INTERIORS[map].music;
+  if (y < -91) return "town"; // Serra do Cipó
   return y < 0 || (y >= 18 && y <= 55) ? "route" : "town";
 }
 
@@ -243,6 +244,15 @@ function continueWalking(dt = 0) {
     if (rt.turnTimer > 0) return;
   }
   tryPlayerMove(dir);
+}
+
+/** A pool current carries the player one tile. Returns false (and stays put) when the way is blocked. */
+export function slide(dir: Dir): boolean {
+  const p = rt.player;
+  const [dx, dy] = DIRS[dir];
+  if (blocked(p.x + dx, p.y + dy)) return false;
+  startStep(p, p.x + dx, p.y + dy, 6);
+  return true;
 }
 
 // ---------- Script helpers ----------

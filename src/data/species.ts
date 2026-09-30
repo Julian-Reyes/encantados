@@ -12,7 +12,11 @@ export type SpeciesId =
   | "chispito" | "chispao"
   | "corujita" | "rasgamorte"
   | "morceguinho" | "morcegao"
-  | "luazinha";
+  | "luazinha"
+  | "jararaca" | "jararacucu"
+  | "lontrinha" | "ariranha"
+  | "canelinha" | "canelao"
+  | "piabinha" | "pirarucao";
 
 export interface BaseStats {
   hp: number;
@@ -261,6 +265,90 @@ export const SPECIES: Record<SpeciesId, Species> = {
     lore: {
       en: "Rarely seen outside the deepest caves. On full-moon nights it climbs out to dance, and sings the same lullaby every time.",
       pt: "Raramente vista fora das grutas mais fundas. Em noites de lua cheia sobe para dançar e canta sempre a mesma cantiga.",
+    },
+  }),
+  jararaca: S({
+    id: "jararaca", dex: 22, name: "Jararaca", types: ["poison"],
+    base: { hp: 35, atk: 60, def: 44, spa: 40, spd: 54, spe: 55 }, catchRate: 255, baseExp: 58,
+    learnset: [[1, "poisonsting"], [1, "sandattack"], [9, "bite"], [13, "screech"], [17, "poisonfang"]],
+    evolves: { to: "jararacucu", level: 22 },
+    kind: { en: "Pit Viper", pt: "Víbora" }, height: 1.2, weight: 4.5, color: "#9a7a4a",
+    lore: {
+      en: "Its zigzag markings vanish among dry leaves. It feels body heat through two little pits on its snout, even in the dark.",
+      pt: "As manchas em zigue-zague somem no meio das folhas secas. Sente o calor do corpo por duas fossetas no focinho, mesmo no escuro.",
+    },
+  }),
+  jararacucu: S({
+    id: "jararacucu", dex: 23, name: "Jararacuçu", types: ["poison"],
+    base: { hp: 60, atk: 85, def: 69, spa: 65, spd: 79, spe: 80 }, catchRate: 90, baseExp: 147,
+    learnset: [[1, "poisonsting"], [1, "sandattack"], [9, "bite"], [13, "screech"], [17, "poisonfang"], [26, "headbutt"], [31, "tremor"]],
+    kind: { en: "Great Viper", pt: "Víbora Grande" }, height: 2.2, weight: 18, color: "#6a5a2a",
+    lore: {
+      en: "Its black and gold scales shine like old coins. Farmers walk the trails in tall boots when one is about.",
+      pt: "As escamas pretas e douradas brilham como moedas antigas. Quando ela anda por perto, a roça só sai de botina.",
+    },
+  }),
+  lontrinha: S({
+    id: "lontrinha", dex: 24, name: "Lontrinha", types: ["water"],
+    base: { hp: 50, atk: 55, def: 45, spa: 55, spd: 50, spe: 60 }, catchRate: 150, baseExp: 66,
+    learnset: [[1, "scratch"], [1, "tailwhip"], [5, "bubble"], [9, "aquajet"], [14, "bite"], [18, "waterpulse"], [24, "headbutt"]],
+    evolves: { to: "ariranha", level: 28 },
+    kind: { en: "River Otter", pt: "Lontra do Rio" }, height: 0.8, weight: 8, color: "#8a5a3a",
+    lore: {
+      en: "It slides down the mossy rocks of the Serra do Cipó waterfalls for fun, then climbs back up and does it again.",
+      pt: "Escorrega pelas pedras cheias de musgo das cachoeiras da Serra do Cipó só por diversão, depois sobe e faz tudo de novo.",
+    },
+  }),
+  ariranha: S({
+    id: "ariranha", dex: 25, name: "Ariranha", types: ["water"],
+    base: { hp: 75, atk: 85, def: 65, spa: 75, spd: 70, spe: 90 }, catchRate: 75, baseExp: 160,
+    learnset: [[1, "scratch"], [1, "tailwhip"], [5, "bubble"], [9, "aquajet"], [14, "bite"], [18, "waterpulse"], [24, "headbutt"], [28, "waterfall"], [33, "screech"]],
+    kind: { en: "Giant Otter", pt: "Lontra Gigante" }, height: 1.7, weight: 32, color: "#6a3f28",
+    lore: {
+      en: "Families hunt together and scream so loudly that jaguars back away. The pale patch on its throat is different on every one.",
+      pt: "As famílias caçam juntas e gritam tão alto que até a onça recua. A mancha clara no pescoço é diferente em cada uma.",
+    },
+  }),
+  canelinha: S({
+    id: "canelinha", dex: 26, name: "Canelinha", types: ["grass"],
+    base: { hp: 45, atk: 45, def: 55, spa: 70, spd: 60, spe: 30 }, catchRate: 190, baseExp: 64,
+    learnset: [[1, "absorb"], [1, "growl"], [8, "stunspore"], [12, "sleeppowder"], [16, "megadrain"], [19, "razorleaf"]],
+    evolves: { to: "canelao", level: 21 },
+    kind: { en: "Stilt Plant", pt: "Planta Canela" }, height: 0.5, weight: 5, color: "#7a9a5a",
+    lore: {
+      en: "A little canela-de-ema that walks on its stiff black stem. When a fire sweeps the serra, it curls up its leaves and waits it out.",
+      pt: "Uma canela-de-ema pequenina que anda no caule preto e duro. Quando o fogo passa pela serra, fecha as folhas e espera.",
+    },
+  }),
+  canelao: S({
+    id: "canelao", dex: 27, name: "Canelão", types: ["grass"],
+    base: { hp: 65, atk: 60, def: 75, spa: 90, spd: 80, spe: 40 }, catchRate: 75, baseExp: 150,
+    learnset: [[1, "absorb"], [1, "growl"], [8, "stunspore"], [12, "sleeppowder"], [16, "megadrain"], [19, "razorleaf"], [26, "moonglow"]],
+    kind: { en: "Bloom Plant", pt: "Planta Florida" }, height: 1.3, weight: 21, color: "#b07ad0",
+    lore: {
+      en: "It can live for five hundred years on bare quartz rock. After the first rain of spring, a violet flower opens on its crown.",
+      pt: "Vive quinhentos anos em cima de rocha de quartzo pelada. Depois da primeira chuva da primavera, uma flor violeta abre na copa.",
+    },
+  }),
+  piabinha: S({
+    id: "piabinha", dex: 28, name: "Piabinha", types: ["water"],
+    base: { hp: 30, atk: 40, def: 40, spa: 30, spd: 30, spe: 70 }, catchRate: 255, baseExp: 40,
+    learnset: [[1, "tackle"], [1, "bubble"], [8, "aquajet"], [15, "bite"]],
+    evolves: { to: "pirarucao", level: 20 },
+    kind: { en: "Minnow", pt: "Peixinho" }, height: 0.3, weight: 0.4, color: "#c0c8d0",
+    lore: {
+      en: "Every stream in Minas is full of them. It nibbles toes, steals bait, and is easy to catch. Nobody expects much from it.",
+      pt: "Todo córrego de Minas está cheio delas. Belisca o dedo, rouba a isca e é fácil de pegar. Ninguém espera muito dela.",
+    },
+  }),
+  pirarucao: S({
+    id: "pirarucao", dex: 29, name: "Pirarucão", types: ["water", "dark"],
+    base: { hp: 95, atk: 115, def: 79, spa: 60, spd: 90, spe: 81 }, catchRate: 45, baseExp: 189,
+    learnset: [[1, "tackle"], [1, "bubble"], [8, "aquajet"], [15, "bite"], [20, "waterfall"], [25, "screech"], [32, "shadowclaw"]],
+    kind: { en: "Giant Fish", pt: "Peixe Gigante" }, height: 3.0, weight: 200, color: "#a8342a",
+    lore: {
+      en: "One of the largest river fish in the world. It surfaces to gulp air with a roar, and its scales are hard enough to file wood.",
+      pt: "Um dos maiores peixes de rio do mundo. Sobe para respirar com um rugido, e as escamas são tão duras que servem de lixa.",
     },
   }),
 };

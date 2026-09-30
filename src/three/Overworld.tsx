@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { BUILDINGS, GROUND_ITEMS, OW_H, OW_W, OW_Y0, SIGNS, owTile, type Building } from "../world/maps";
 import { useGame } from "../game/store";
-import { mat, glow, Bx, Cy, Sph, Tor, GEO, Crystal, CrystalCluster, MineCart } from "./prims";
+import { mat, glow, Bx, Cn, Cy, Sph, SphHi, Tor, GEO, Crystal, CrystalCluster, MineCart } from "./prims";
 import { AmuletModel } from "./Amulet";
 
 // Deterministic pseudo-random so the map looks the same every load.
@@ -49,7 +49,12 @@ const GROUND_COLORS: Record<string, string[]> = {
   r: ["#86c95c"],
   F: ["#86c95c"],
   O: ["#d8d2c4"],
+  k: ["#a89a84", "#9c8e78"],
+  w: ["#a89a84"],
 };
+
+/** Height of the Serra do Cipó cliff the waterfall pours off. */
+const CLIFF_H = 2.4;
 
 function useTerrain() {
   return useMemo(() => {
@@ -95,7 +100,7 @@ function useTerrain() {
         const jz = (hash(x, y, 5) - 0.5) * 0.25;
         const tall = 0.9 + h * 0.5;
         setInst(trunks, i, x + jx, tall / 2, y + jz, 1, tall, 1);
-        const village = y >= 0 && y < 18;
+        const village = (y >= 0 && y < 18) || y < -91;
         // Ipê trees (pink / yellow) brighten the villages; cerrado greens elsewhere.
         const colorPick = hash(x, y, 7);
         let c = ["#3f8f3a", "#4c9c3e", "#357f35", "#5aa845"][Math.floor(h * 4)];
@@ -170,12 +175,31 @@ function useTerrain() {
       for (let k = 0; k < 4; k++) setInst(planks, i * 4 + k, x, -0.02, y - 0.375 + k * 0.25, 1, 0.08, 0.22);
     });
 
-    [ground, bed, water, innerTrunks, innerCanopy, outerTrunks, outerCanopy, grass, flowers, rocks, ledges, posts, rails, planks].forEach((mm) => {
+    // Cliff: a tall block per tile with a couple of boulders bulging from it. Waterfall tiles
+    // are cliff too; the falling water is drawn over their south face by <Waterfall>.
+    const cliffTiles = tiles.filter(([, , t]) => t === "k" || t === "w");
+    const cliff = makeInstanced(GEO.box, new THREE.MeshLambertMaterial({ color: "#ffffff", flatShading: true }), cliffTiles.length, { cast: true, receive: true });
+    const cliffRocks = makeInstanced(GEO.rock, new THREE.MeshLambertMaterial({ color: "#ffffff", flatShading: true }), cliffTiles.length * 2, { cast: true });
+    const CLIFF_TONES = ["#a89a84", "#9a8c76", "#b4a68e"];
+    cliffTiles.forEach(([x, y, t], i) => {
+      const h = CLIFF_H + (t === "w" ? 0 : hash(x, y, 12) * 0.5);
+      setInst(cliff, i, x, h / 2, y, 1, h, 1);
+      cliff.setColorAt(i, col.set(CLIFF_TONES[Math.floor(hash(x, y, 13) * 3)]));
+      for (let k = 0; k < 2; k++) {
+        const south = owTile(x, y + 1) !== "k" && owTile(x, y + 1) !== "w";
+        const r = 0.3 + hash(x, y, 14 + k) * 0.25;
+        setInst(cliffRocks, i * 2 + k, x + (hash(x, y, 16 + k) - 0.5) * 0.7, t === "w" && south ? -5 : 0.5 + hash(x, y, 18 + k) * (h - 0.6), y + (south ? 0.45 : 0), r, r * 0.8, r, hash(x, y, 20 + k) * 6);
+        cliffRocks.setColorAt(i * 2 + k, col.set(CLIFF_TONES[(k + Math.floor(hash(x, y, 22) * 3)) % 3]).offsetHSL(0, 0, -0.04));
+      }
+    });
+
+    const all = [ground, bed, water, innerTrunks, innerCanopy, outerTrunks, outerCanopy, grass, flowers, rocks, ledges, posts, rails, planks, cliff, cliffRocks];
+    all.forEach((mm) => {
       mm.instanceMatrix.needsUpdate = true;
       if (mm.instanceColor) mm.instanceColor.needsUpdate = true;
       mm.computeBoundingSphere();
     });
-    return { objects: [ground, bed, water, innerTrunks, innerCanopy, outerTrunks, outerCanopy, grass, flowers, rocks, ledges, posts, rails, planks], bridgeTiles };
+    return { objects: all, bridgeTiles };
   }, []);
 }
 
@@ -198,6 +222,63 @@ function Sparkles() {
     m.instanceMatrix.needsUpdate = true;
   });
   return <instancedMesh ref={ref} args={[GEO.box, glow("#ffffff"), spots.length]} frustumCulled={false} />;
+}
+
+/** The Cachoeira da Farofa: a sheet of water down the cliff's south face, streaks racing down it, and foam where it hits the pool. */
+function Waterfall() {
+  const cols = useMemo(() => {
+    const out: [number, number][] = [];
+    for (let y = OW_Y0; y < OW_H; y++) for (let x = 0; x < OW_W; x++) if (owTile(x, y) === "w" && owTile(x, y + 1) !== "w") out.push([x, y]);
+    return out;
+  }, []);
+  const tops = useMemo(() => {
+    const out: [number, number][] = [];
+    for (let y = OW_Y0; y < OW_H; y++) for (let x = 0; x < OW_W; x++) if (owTile(x, y) === "w") out.push([x, y]);
+    return out;
+  }, []);
+  const STREAKS = 7;
+  const streaks = useRef<THREE.InstancedMesh>(null);
+  const foam = useRef<THREE.InstancedMesh>(null);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    const sm = streaks.current;
+    if (sm) {
+      cols.forEach(([x, y], c) => {
+        for (let k = 0; k < STREAKS; k++) {
+          const ph = (t * 1.3 + k / STREAKS + hash(x, k, 30)) % 1;
+          setInst(sm, c * STREAKS + k, x - 0.42 + ((k * 0.37 + hash(x, k, 31)) % 1) * 0.84, CLIFF_H * (1 - ph) - 0.1, y + 0.53, 0.05, 0.45, 0.02);
+        }
+      });
+      sm.instanceMatrix.needsUpdate = true;
+    }
+    const fm = foam.current;
+    if (fm) {
+      cols.forEach(([x, y], c) => {
+        for (let k = 0; k < 5; k++) {
+          const s = 0.18 + Math.abs(Math.sin(t * 3 + k * 1.9 + c)) * 0.16;
+          setInst(fm, c * 5 + k, x - 0.4 + k * 0.2, -0.05, y + 0.75 + Math.sin(k * 2.3) * 0.15, s, s * 0.5, s);
+        }
+      });
+      fm.instanceMatrix.needsUpdate = true;
+    }
+  });
+  return (
+    <group>
+      {cols.map(([x, y]) => (
+        <mesh key={`${x},${y}`} position={[x, CLIFF_H / 2 - 0.1, y + 0.52]} material={glow("#9fd8f5", 0.82)}>
+          <planeGeometry args={[1, CLIFF_H + 0.2]} />
+        </mesh>
+      ))}
+      {/* the stream running over the top of the cliff to the edge */}
+      {tops.map(([x, y]) => (
+        <mesh key={`t${x},${y}`} position={[x, CLIFF_H + 0.01, y]} rotation={[-Math.PI / 2, 0, 0]} material={glow("#6ab8e8", 0.9)}>
+          <planeGeometry args={[1, 1]} />
+        </mesh>
+      ))}
+      <instancedMesh ref={streaks} args={[GEO.box, glow("#ffffff", 0.85), cols.length * STREAKS]} frustumCulled={false} />
+      <instancedMesh ref={foam} args={[GEO.sphere, glow("#f4fbff", 0.9), cols.length * 5]} frustumCulled={false} />
+    </group>
+  );
 }
 
 function BridgeRails() {
@@ -241,7 +322,7 @@ function BuildingMesh({ b }: { b: Building }) {
   const cz = b.y + (b.h - 1) / 2;
   const W = b.w - 0.1;
   const D = b.h - 0.1;
-  const wallH = { home: 1.35, rivalhouse: 1.35, house: 1.3, lab: 1.7, center: 1.6, mart: 1.5, church: 2.1, arena: 0, cave: 0 }[b.kind];
+  const wallH = { home: 1.35, rivalhouse: 1.35, house: 1.3, lab: 1.7, center: 1.6, mart: 1.5, church: 2.1, arena: 0, waterarena: 0, cave: 0 }[b.kind];
   const front = D / 2 + 0.01;
   const doorX = b.door[0] - cx;
   if (b.kind === "arena")
@@ -254,6 +335,12 @@ function BuildingMesh({ b }: { b: Building }) {
     return (
       <group position={[cx, 0, cz]}>
         <CaveMouth W={W} D={D} doorX={doorX} rock={b.color} dark={b.roof} />
+      </group>
+    );
+  if (b.kind === "waterarena")
+    return (
+      <group position={[cx, 0, cz]}>
+        <WaterArena W={W} D={D} doorX={doorX} wall={b.color} roof={b.roof} />
       </group>
     );
   const accent = b.kind === "center" ? CENTER_RED : b.kind === "mart" ? MART_BLUE : null;
@@ -481,6 +568,75 @@ function Arena({ W, D, doorX, rock, topaz }: { W: number; D: number; doorX: numb
   );
 }
 
+// Marina's arena: a pale natatorium under a rolling aquamarine barrel roof, glass all along
+// the front, a floating aquamarine over the entrance and a little fountain spilling beside it.
+const AQUA = "#7cc4f0";
+
+function WaterArena({ W, D, doorX, wall, roof }: { W: number; D: number; doorX: number; wall: string; roof: string }) {
+  const gem = useRef<THREE.Group>(null);
+  const jets = useRef<(THREE.Mesh | null)[]>([]);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (gem.current) {
+      gem.current.rotation.y = t * 1.1;
+      gem.current.position.y = 2.95 + Math.sin(t * 2) * 0.06;
+    }
+    jets.current.forEach((m, i) => m && m.scale.set(0.05, 0.35 + Math.abs(Math.sin(t * 5 + i * 2)) * 0.2, 0.05));
+  });
+  const wallH = 1.5;
+  const front = D / 2 + 0.01;
+  const panes: number[] = [];
+  for (let i = 0; i < Math.round(W); i++) {
+    const px = -W / 2 + 0.5 + i;
+    if (Math.abs(px - doorX) > 0.8) panes.push(px);
+  }
+  return (
+    <group>
+      <mesh geometry={GEO.box} material={mat(wall)} position={[0, wallH / 2, 0]} scale={[W, wallH, D]} castShadow receiveShadow />
+      <Bx p={[0, 0.12, 0]} s={[W + 0.06, 0.24, D + 0.06]} c="#2a6a9a" />
+      {/* barrel roof: a half cylinder along the building */}
+      <mesh geometry={GEO.cyl} material={mat(roof)} position={[0, wallH, 0]} rotation={[0, 0, Math.PI / 2]} scale={[1.3, W + 0.2, D / 2 + 0.1]} castShadow />
+      {/* white wave stripes along the roof */}
+      {[-D / 4, D / 4].map((z) => (
+        <Bx key={z} p={[0, wallH + 1.16, z]} s={[W + 0.24, 0.08, 0.14]} c="#f5fbff" shadow={false} />
+      ))}
+      {/* glass front */}
+      {panes.map((px) => (
+        <group key={px} position={[px, 0.85, front]}>
+          <Bx s={[0.78, 0.9, 0.05]} c="#2a6a9a" shadow={false} />
+          <Bx p={[0, 0, 0.02]} s={[0.68, 0.8, 0.04]} c="#bfe6ff" shadow={false} />
+          <Bx p={[0, 0.1, 0.045]} s={[0.68, 0.05, 0.01]} c="#ffffff" shadow={false} />
+        </group>
+      ))}
+      {/* the door under a wave-shaped awning */}
+      <group position={[doorX, 0, front]}>
+        <Bx p={[0, 0.55, 0]} s={[0.8, 1.1, 0.06]} c="#9ad0f0" shadow={false} />
+        <Bx p={[0, 0.55, 0.035]} s={[0.03, 1.1, 0.02]} c="#2a6a9a" shadow={false} />
+        {[-0.4, 0, 0.4].map((dx, i) => (
+          <Sph key={dx} p={[dx, 1.28, 0.2]} s={[0.24, 0.1, 0.24]} c={i % 2 ? "#ffffff" : AQUA} />
+        ))}
+        <Bx p={[0, 0.02, 0.3]} s={[1.0, 0.04, 0.5]} c="#d8eef7" />
+      </group>
+      {/* floating aquamarine crest */}
+      <group ref={gem} position={[doorX, 2.95, front - 0.3]}>
+        <SphHi p={[0, 0.06, 0]} s={[0.2, 0.26, 0.2]} c={AQUA} />
+        <Cn p={[0, -0.22, 0]} s={[0.19, 0.28, 0.19]} r={[Math.PI, 0, 0]} c="#5aaede" />
+        <SphHi p={[0.06, 0.14, 0.12]} s={0.05} c="#ffffff" g />
+      </group>
+      {/* little fountain basin with jets beside the door */}
+      <group position={[doorX + 2.1, 0, front + 0.05]}>
+        <Cy p={[0, 0.12, 0]} s={[0.45, 0.24, 0.3]} c="#d8eef7" />
+        <mesh position={[0, 0.25, 0]} rotation={[-Math.PI / 2, 0, 0]} material={glow("#6ab8e8", 0.9)}>
+          <circleGeometry args={[0.4, 16]} />
+        </mesh>
+        {[-0.18, 0, 0.18].map((dx, i) => (
+          <mesh key={dx} ref={(m) => void (jets.current[i] = m)} geometry={GEO.cyl} material={glow("#e8f7ff", 0.85)} position={[dx, 0.42, 0]} scale={[0.05, 0.4, 0.05]} />
+        ))}
+      </group>
+    </group>
+  );
+}
+
 // The Gruta da Lapinha: a pale limestone hill with a dark opening, hanging stalactites and
 // cerrado shrubs clinging to the rock.
 function CaveMouth({ W, D, doorX, rock, dark }: { W: number; D: number; doorX: number; rock: string; dark: string }) {
@@ -633,6 +789,7 @@ export function Overworld() {
         <meshLambertMaterial color="#5f9e44" />
       </mesh>
       <Sparkles />
+      <Waterfall />
       <BridgeRails />
       <Fountain />
       <Lampposts />

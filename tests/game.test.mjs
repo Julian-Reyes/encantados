@@ -168,7 +168,7 @@ test('every cave ladder is linked and the whole Gruta da Lapinha is reachable fr
   for (const m of caves) {
     maps.INTERIORS[m].rows.forEach((row, y) => [...row].forEach((ch, x) => {
       if (ch === 'H' || ch === 'U') assert.ok(maps.caveLink(m, x, y), `${m} (${x},${y}) ${ch} has no partner`);
-      if ('.HUZ'.includes(ch)) assert.ok(seen.has(key(m, x, y)) || nextToReached(m, x, y), `${m} (${x},${y}) "${ch}" can't be reached`);
+      if ('.HUZD'.includes(ch)) assert.ok(seen.has(key(m, x, y)) || nextToReached(m, x, y), `${m} (${x},${y}) "${ch}" can't be reached`);
     }));
     for (const e of [...maps.NPCS, ...maps.GROUND_ITEMS].filter(e => e.map === m)) {
       assert.ok(nextToReached(m, e.x, e.y), `${e.id} in ${m} can't be reached`);
@@ -181,9 +181,12 @@ test('species data is consistent and wild tables only use known species', () => 
     for (const [, mv] of sp.learnset) assert.ok(MOVES[mv], `${sp.id} learns unknown move ${mv}`);
     if (sp.evolves) assert.ok(SPECIES[sp.evolves.to], `${sp.id} evolves into unknown ${sp.evolves.to}`);
   }
-  for (const [map, y] of [['overworld', -50], ['overworld', -10], ['overworld', 30], ['overworld', 50], ['lapinha1', 0], ['lapinha3', 0]]) {
+  for (const [map, y] of [['overworld', -80], ['overworld', -50], ['overworld', -10], ['overworld', 30], ['overworld', 50], ['lapinha1', 0], ['lapinha3', 0]]) {
     for (const slot of maps.encounterTable(map, y)) assert.ok(SPECIES[slot.species], `${map}/${y}: ${slot.species}`);
   }
+  for (const y of [-110, -80, 30]) for (const slot of maps.fishTable(y)) assert.ok(SPECIES[slot.species], `fish ${y}: ${slot.species}`);
+  assert.ok(maps.encounterTable('overworld', -80).some(s => s.species === 'jararaca'));
+  assert.ok(maps.fishTable(-110).some(s => s.species === 'piabinha'));
   assert.ok(maps.encounterTable('lapinha1', 0).some(s => s.species === 'morceguinho'));
 });
 
@@ -202,4 +205,152 @@ test('a move with no effect deals no damage', async () => {
   const { messages } = await dialogues(() => runBattle({ kind: 'wild', enemy: [bat] }, ui([{ kind: 'move', index: 0 }, { kind: 'run' }])));
   assert.ok(messages.some(m => /doesn't affect/.test(m)), messages.join(' | '));
   assert.equal(bat.hp, maxHp(bat));
+});
+
+const { ITEMS, mtFits } = await server.ssrLoadModule('/src/data/items.ts');
+
+test('Dark still resists nothing new: Water/Dark takes 2x from Grass, Electric and Bug', () => {
+  assert.equal(effectiveness('grass', ['water', 'dark']), 2);
+  assert.equal(effectiveness('electric', ['water', 'dark']), 2);
+  assert.equal(effectiveness('bug', ['water', 'dark']), 2);
+  assert.equal(MOVES.bite.type, 'dark');
+});
+
+test('MTs only fit the creatures that can learn them', () => {
+  assert.equal(mtFits('mt02', SPECIES.bolhuga), true);
+  assert.equal(mtFits('mt02', SPECIES.pirarucao), true);
+  assert.equal(mtFits('mt02', SPECIES.pedrudo), false);
+  assert.equal(mtFits('mt01', SPECIES.pedrudo), true);
+  assert.equal(mtFits('mt01', SPECIES.labaredo), true);
+  assert.equal(mtFits('mt01', SPECIES.bolhuga), false);
+  for (const id of ['mt01', 'mt02']) assert.ok(MOVES[ITEMS[id].mt.move], id);
+  const leaders = maps.NPCS.filter(n => n.trainer?.badge);
+  for (const l of leaders) assert.ok(l.trainer.mt && ITEMS[l.trainer.mt].mt, `${l.id} hands out an MT`);
+});
+
+test('every building with an interior has a walkable way in and out', () => {
+  for (const b of maps.BUILDINGS.filter(b => b.interior)) {
+    assert.ok(maps.isWalkableTile('overworld', b.door[0], b.door[1] + 1), `${b.letter} door step`);
+    const [ix, iy] = b.entry ?? maps.interiorDoor(b.interior);
+    assert.ok(ix >= 0 && maps.isWalkableTile(b.interior, ix, iy), `${b.letter} arrives inside ${b.interior} at (${ix},${iy})`);
+  }
+  // The Lapinha's north exit comes out of the Route 4 mouth.
+  const d = maps.INTERIORS.lapinha2.rows[0].indexOf('D');
+  assert.ok(d > 0, 'B1F has a north exit');
+  const mouth = maps.buildingForInterior('lapinha2');
+  assert.equal(mouth.letter, 'U');
+  assert.deepEqual(mouth.entry.slice(0, 2), [d, 1]);
+  assert.ok(maps.isWalkableTile('overworld', mouth.door[0], mouth.door[1] + 1));
+  assert.ok(!maps.NPCS.some(n => n.map === 'lapinha2' && n.y <= 1), 'nothing blocks the way out');
+});
+
+test('Route 4 and Serra do Cipó are reachable from the Lapinha north mouth', () => {
+  const mouth = maps.buildingForInterior('lapinha2');
+  const key = (x, y) => `${x},${y}`;
+  const onMap = e => e.map === 'overworld' && e.y < -72;
+  // People who only appear during a scene (the rival) don't stand in the way.
+  const present = e => !e.visible || e.visible({});
+  const occupied = new Set([...maps.NPCS.filter(present), ...maps.GROUND_ITEMS, ...maps.SIGNS].filter(onMap).map(e => key(e.x, e.y)));
+  const seen = new Set();
+  const queue = [[mouth.door[0], mouth.door[1] + 1]];
+  while (queue.length) {
+    const [x, y] = queue.pop();
+    if (seen.has(key(x, y)) || y >= -72) continue;
+    seen.add(key(x, y));
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy;
+      // Ledges are one-way: hop two tiles south.
+      if (dy === 1 && maps.tileAt('overworld', nx, ny) === 'L') { if (maps.isWalkableTile('overworld', nx, ny + 1)) queue.push([nx, ny + 1]); continue; }
+      if (maps.isWalkableTile('overworld', nx, ny) && !occupied.has(key(nx, ny))) queue.push([nx, ny]);
+    }
+  }
+  const near = (x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(key(x + dx, y + dy)));
+  for (const e of [...maps.NPCS.filter(present), ...maps.GROUND_ITEMS, ...maps.SIGNS].filter(onMap)) assert.ok(near(e.x, e.y), `${e.id ?? 'sign'} at (${e.x},${e.y}) can't be reached`);
+  for (const b of maps.BUILDINGS.filter(b => b.y < -72)) assert.ok(seen.has(key(b.door[0], b.door[1] + 1)), `${b.letter} door can't be reached`);
+  assert.ok(seen.has(key(15, -117)) || seen.has(key(16, -117)), 'the rival row at the north exit');
+});
+
+// Walk the pool arena the way the game does: a step onto a current keeps sliding until still ground or a block.
+function poolMoves(x, y, occupied) {
+  const key = (x, y) => `${x},${y}`;
+  const V = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const free = (x, y) => maps.isWalkableTile('arena2', x, y) && !occupied.has(key(x, y));
+  const out = [];
+  for (const [dx, dy] of Object.values(V)) {
+    let nx = x + dx, ny = y + dy;
+    if (!free(nx, ny)) continue;
+    for (let guard = 0; guard < 100; guard++) {
+      const c = maps.currentAt('arena2', nx, ny);
+      if (!c || !free(nx + V[c][0], ny + V[c][1])) break;
+      nx += V[c][0]; ny += V[c][1];
+    }
+    out.push([nx, ny]);
+  }
+  return out;
+}
+function poolReach(start, occupied) {
+  const key = (x, y) => `${x},${y}`;
+  const seen = new Set();
+  const queue = [start];
+  while (queue.length) {
+    const [x, y] = queue.pop();
+    if (seen.has(key(x, y))) continue;
+    seen.add(key(x, y));
+    for (const n of poolMoves(x, y, occupied)) queue.push(n);
+  }
+  return seen;
+}
+
+test('Marina\'s pool arena: everyone can be reached and no current traps you', () => {
+  const key = (x, y) => `${x},${y}`;
+  const npcs = maps.NPCS.filter(n => n.map === 'arena2');
+  const occupied = new Set(npcs.map(n => key(n.x, n.y)));
+  const door = maps.interiorDoor('arena2');
+  const reached = poolReach(door, occupied);
+  const near = (x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => reached.has(key(x + dx, y + dy)));
+  for (const n of npcs) assert.ok(near(n.x, n.y), `${n.id} can't be reached`);
+  assert.ok(npcs.some(n => n.trainer?.badge === 'badgeAquamarine'));
+  // From every tile you can come to rest on, the way back to the door is still open.
+  for (const k of reached) {
+    const [x, y] = k.split(',').map(Number);
+    assert.ok(poolReach([x, y], occupied).has(key(...door)), `stuck at (${x},${y})`);
+  }
+  // Not trivially straight: a straight walk up the middle can't reach the leader's platform.
+  const [dx] = door;
+  let y = door[1];
+  while (maps.isWalkableTile('arena2', dx, y - 1) && !maps.currentAt('arena2', dx, y - 1)) y--;
+  assert.ok(y > 2, 'the middle is blocked by water');
+});
+
+test('a save made before Route 4 existed still loads onto the same spot', async () => {
+  // Written by the previous build (OW_Y0 was -72): standing on the Route 3 road, healed at the cave's center.
+  const oldSave = {
+    v: 1, lang: 'en', playerName: 'Caju', rivalName: 'Caio', money: 4321,
+    party: [createMon('bolhuga', 16)], box: [], bag: { amuleto: 3, fossilgarra: 1 },
+    flags: { hasStarter: true, badgeTopaz: true, beat_leader1: true, fossilTaken: true },
+    seen: ['bolhuga'], caught: ['bolhuga'],
+    pos: { map: 'overworld', x: 15, y: -60, facing: 'up' },
+    heal: { map: 'center3', x: 5, y: 3, facing: 'up' },
+    playTime: 5400, starter: 'bolhuga',
+  };
+  storage.set('encantados-save-v1', JSON.stringify(oldSave));
+  const loaded = store.loadGame();
+  assert.deepEqual(loaded.pos, oldSave.pos);
+  assert.equal(maps.tileAt('overworld', 15, -60), ',');
+  assert.ok(maps.isWalkableTile('overworld', 15, -60));
+  const { rt, loadMap } = await server.ssrLoadModule('/src/world/runtime.ts');
+  G().set({ ...loaded, sound: false, music: false });
+  loadMap(loaded.pos.map, loaded.pos.x, loaded.pos.y, loaded.pos.facing);
+  assert.deepEqual([rt.map, rt.player.x, rt.player.y], ['overworld', 15, -60]);
+  // Everything from the old northern wall south is exactly as it was.
+  const { createHash } = await import('node:crypto');
+  const rows = [];
+  for (let y = -72; y < 76; y++) { let r = ''; for (let x = 0; x < 32; x++) r += maps.owTile(x, y); rows.push(r); }
+  assert.equal(createHash('sha1').update(rows.join('\n')).digest('hex'), 'd4837bbf3d83fd8f5cab32f8f628645e04f46bf4');
+  const doors = Object.fromEntries(maps.BUILDINGS.filter(b => b.letter !== 'h').map(b => [b.letter, b.door]));
+  assert.deepEqual(doors.P, [21, 72]);
+  assert.deepEqual(doors.G, [15, 6]);
+  assert.deepEqual(doors.V, [16, -67]);
+  assert.deepEqual(doors.Q, [6, -66]);
+  assert.equal(maps.buildingForInterior(loaded.heal.map).letter, 'Q');
 });

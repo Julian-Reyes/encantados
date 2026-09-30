@@ -14,7 +14,7 @@ interface Style {
   shirt: string;
   pants: string;
   shoes?: string;
-  hat?: { color: string; brim?: string; kind: "cap" | "hard" | "nurse" | "back" | "straw" };
+  hat?: { color: string; brim?: string; kind: "cap" | "hard" | "nurse" | "back" | "straw" | "swimcap" };
   coat?: string;
   skirt?: boolean;
   pack?: string;
@@ -46,6 +46,11 @@ const LOOKS: Record<Look, Style> = {
   // Garimpo Sombrio: miner gear gone wrong, with a dark bandana and helmet.
   grunt: { skin: "#c68a5a", hair: "#1a1a1a", hairStyle: "short", shirt: "#3a3a42", pants: "#2a2a30", hat: { color: "#2a2a2a", kind: "hard" }, pack: "#5a4a3a", mask: "#7a1f24", shoes: "#1a1a1a" },
   scientist: { skin: "#f0c8a0", hair: "#6a4a2a", hairStyle: "spiky", shirt: "#d0a040", pants: "#4a4a5a", coat: "#f5f5f5", glasses: true },
+  swimmer: { skin: "#d9a57a", hair: "#2a1a10", hairStyle: "short", shirt: "#2a8ad0", pants: "#2a8ad0", shoes: "#d9a57a", hat: { color: "#f5f5f5", kind: "swimcap" }, glasses: true },
+  fisherman: { skin: "#c68a5a", hair: "#9a9a9a", hairStyle: "short", shirt: "#5a7a4a", pants: "#6a5a3a", hat: { color: "#e8cf7a", brim: "#c9a94a", kind: "straw" }, beard: "#b8b8b8" },
+  picnicker: { skin: "#f0c090", hair: "#6a3a1a", hairStyle: "pigtails", shirt: "#f07a5a", pants: "#4a7a3a", hat: { color: "#e8cf7a", brim: "#c9a94a", kind: "straw" } },
+  // Marina, the Water leader: aquamarine top, a sea-blue skirt and long blue-black hair.
+  marina: { skin: "#e0b088", hair: "#1f3a5a", hairStyle: "long", shirt: "#7cc4f0", pants: "#1f5a8a", skirt: true, coat: "#2a8ab0", shoes: "#f5f5f5" },
 };
 
 function getActor(id?: string): Actor | undefined {
@@ -206,6 +211,8 @@ function Hat({ hat }: { hat: NonNullable<Style["hat"]> }) {
           <Cy p={[0, 0.06, 0]} s={[0.26, 0.02, 0.26]} c={hat.color} />
         </group>
       );
+    case "swimcap":
+      return <Sph p={[0, 0.08, -0.02]} s={[0.225, 0.17, 0.215]} c={hat.color} />;
     case "straw":
       return (
         <group>

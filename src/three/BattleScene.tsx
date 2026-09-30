@@ -9,9 +9,9 @@ import { bv, ANIM_MS, now, type SideVis } from "./battleVis";
 import { CreatureModel } from "./Creatures";
 import { AmuletModel } from "./Amulet";
 import { Humanoid, type HumanPose } from "./Characters";
-import { Bx, Cy, Sph, glow, mat, GEO, CrystalCluster, TOPAZ } from "./prims";
+import { Bx, Cn, Cy, Sph, glow, mat, GEO, CrystalCluster, TOPAZ } from "./prims";
 import { useGame, type MapId } from "../game/store";
-import { INTERIORS, NPCS, isCave, type Look } from "../world/maps";
+import { INTERIORS, NPCS, isCave, isPool, type Look } from "../world/maps";
 import { currentBattle } from "../game/flow";
 import { TYPES, type TypeId } from "../data/types";
 import type { AnimKind, Side } from "../game/battle";
@@ -45,14 +45,15 @@ const rnd = (i: number, s = 0) => {
 
 // ---------------------------------------------------------------- stages
 
-export type Stage = "route" | "cave" | "gym";
-export const stageOf = (map: MapId): Stage => (map.startsWith("arena") ? "gym" : isCave(map) ? "cave" : "route");
+export type Stage = "route" | "cave" | "gym" | "pool";
+export const stageOf = (map: MapId): Stage => (isPool(map) ? "pool" : map.startsWith("arena") ? "gym" : isCave(map) ? "cave" : "route");
 
 /** Sky, fog and light settings per stage, applied by the shared rig in Scene.tsx. Fog is measured past the point the camera looks at. */
 export const STAGE_LIGHT: Record<Stage, { sky: string; fog: [number, number]; hemi: number; sun: number; sunColor: string; sunFrom: [number, number, number] }> = {
   route: { sky: "#bfe8ff", fog: [16, 50], hemi: 1.2, sun: 2.0, sunColor: "#fff1d6", sunFrom: [-4, 12, -5] },
   cave: { sky: "#120e0b", fog: [2, 16], hemi: 0.5, sun: 1.5, sunColor: "#ffe2b0", sunFrom: [-3, 12, -6] },
   gym: { sky: "#2a2119", fog: [4, 20], hemi: 0.7, sun: 1.8, sunColor: "#ffd9a0", sunFrom: [-5, 12, -6] },
+  pool: { sky: "#cfeaf5", fog: [10, 34], hemi: 1.1, sun: 1.7, sunColor: "#f2fbff", sunFrom: [-4, 12, -5] },
 };
 
 type Item = [number, number, number, number, number, number, number]; // x y z sx sy sz rotY
@@ -157,6 +158,80 @@ function RouteStage() {
       <Sph p={[-14, -2, -24]} s={[14, 6, 6]} c="#7fb86a" />
       <Sph p={[12, -2.5, -26]} s={[16, 7, 6]} c="#73ad5f" />
       <Motes color="#fff6c8" count={70} box={[-6, 0.2, -6, 6, 3, 3]} size={0.05} />
+    </group>
+  );
+}
+
+/** Marina's arena: a tiled deck over a pool, with a waterfall on the back wall and pale blue stands. */
+function PoolStage() {
+  const stands = useMemo(() => {
+    const out: Record<string, Item[]> = { "#d4eaf2": [], "#b8dcea": [], "#9ccbe0": [] };
+    const keys = Object.keys(out);
+    for (let t = 0; t < 3; t++) {
+      const r = 8.2 + t * 1.1;
+      const h = 0.5 + t * 0.6;
+      for (let i = 0; i < 30; i++) {
+        const a = -2.5 + (i / 29) * 5;
+        out[keys[t]].push([Math.sin(a) * r, h / 2, -Math.cos(a) * r, 1.3, h, 1.1, -a]);
+      }
+    }
+    return out;
+  }, []);
+  const fall = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    fall.current?.children.forEach((c, i) => {
+      c.position.y = 5 - ((clock.elapsedTime * 1.2 + rnd(i, 71)) % 1) * 5;
+    });
+  });
+  return (
+    <group>
+      {/* the pool, and a deck of pale tiles where the fight happens */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.25, 0]}>
+        <circleGeometry args={[40, 40]} />
+        <meshLambertMaterial color="#2a7ab0" />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.12, 0]} material={glow("#5ab4e8", 0.75)}>
+        <circleGeometry args={[40, 40]} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, -0.78]} position={[0.1, -0.04, -0.05]} scale={[5.6, 4.0, 1]} receiveShadow>
+        <circleGeometry args={[1, 40]} />
+        <meshLambertMaterial color="#e6f3f7" />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, -0.78]} position={[0.1, -0.035, -0.05]} scale={[4.4, 2.9, 1]} receiveShadow>
+        <ringGeometry args={[0.93, 1, 40]} />
+        <meshLambertMaterial color="#2a6a9a" />
+      </mesh>
+      {(["player", "enemy"] as Side[]).map((sd) => (
+        <mesh key={sd} rotation={[-Math.PI / 2, 0, 0]} position={[POS[sd].x, -0.03, POS[sd].z]} scale={[0.85, 0.65, 1]} receiveShadow>
+          <circleGeometry args={[1, 24]} />
+          <meshLambertMaterial color="#cfe6ee" />
+        </mesh>
+      ))}
+      {Object.entries(stands).map(([c, items]) => (
+        <Scatter key={c} geo={GEO.box} color={c} items={items} />
+      ))}
+      {/* stepping stones out in the water */}
+      {[[-5.2, -2.2], [-4.4, -4.0], [5.6, 1.2], [4.9, 3.0], [-6.2, 1.4]].map(([x, z], i) => (
+        <Cy key={i} p={[x, -0.08, z]} s={[0.5, 0.2, 0.5]} c="#9aa4a8" />
+      ))}
+      {/* back wall with the waterfall pouring into the pool */}
+      <Bx p={[0, 2.5, -11]} s={[14, 5, 0.4]} c="#b8dcea" />
+      <mesh position={[0.5, 2.5, -10.75]} material={glow("#bfe8ff", 0.88)}>
+        <planeGeometry args={[4, 5]} />
+      </mesh>
+      <group ref={fall}>
+        {Array.from({ length: 14 }, (_, i) => (
+          <Bx key={i} p={[-1.4 + rnd(i, 72) * 3.8, 2.5, -10.7]} s={[0.08, 0.7, 0.02]} c="#ffffff" g shadow={false} />
+        ))}
+      </group>
+      {[-1.2, -0.2, 0.9, 2.0].map((x, i) => (
+        <Sph key={x} p={[x, -0.05, -10.2]} s={[0.6 + (i % 2) * 0.2, 0.3, 0.5]} c="#f4fbff" g />
+      ))}
+      <group position={[0.5, 5.4, -10.7]}>
+        <Sph p={[0, 0.1, 0]} s={[0.35, 0.45, 0.18]} c="#7cc4f0" />
+        <Cn p={[0, -0.35, 0]} s={[0.33, 0.45, 0.18]} r={[Math.PI, 0, 0]} c="#5aaede" />
+      </group>
+      <Motes color="#e8f7ff" count={50} box={[-6, 0.2, -6, 6, 3, 3]} size={0.05} />
     </group>
   );
 }
@@ -974,7 +1049,7 @@ export function BattleScene() {
   return (
     <group>
       <group position={[O.x, 0, O.z]}>
-        {stage === "gym" ? <GymStage /> : stage === "cave" ? <CaveStage map={map} /> : <RouteStage />}
+        {stage === "gym" ? <GymStage /> : stage === "pool" ? <PoolStage /> : stage === "cave" ? <CaveStage map={map} /> : <RouteStage />}
       </group>
       <BattleTrainer side="player" look="player" />
       {look && <BattleTrainer side="enemy" look={look} />}

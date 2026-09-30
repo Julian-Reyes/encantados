@@ -1,22 +1,24 @@
 // All map data. Tile (x, y): x grows east, y grows south. In 3D a tile sits at (x, 0, y),
 // so north is -z and the camera looks north from the south, like the handhelds.
-// Routes 2 and 3 were added north of Cidade Ipê at negative y, so older coordinates (and saves) stay valid.
+// Routes 2-4 and Serra do Cipó were added north of Cidade Ipê at negative y, so older coordinates (and saves) stay valid.
 //
 // Overworld tile chars:
 //   .  short grass       ,  dirt path       "  tall grass (encounters)   f  flowers
 //   s  plaza stone       =  bridge          ~  water                     T  tree
 //   L  ledge (hop south) r  boulder         O  fountain                  F  fence
+//   k  cliff face        w  waterfall
 //   Building footprints use one letter per building (door = bottom row, middle column);
-//   the Gruta da Lapinha's cave mouth is one too (V).
+//   the Gruta da Lapinha's two cave mouths are too (V south, U north).
 
 import type { Dir, MapId } from "../game/store";
 import type { SpeciesId } from "../data/species";
 import type { ItemId } from "../data/items";
+import type { MoveId } from "../data/moves";
 import type { L } from "../data/types";
 
 export const OW_W = 32;
 /** Northmost overworld row (inclusive); rows run from OW_Y0 to OW_H - 1. */
-export const OW_Y0 = -72;
+export const OW_Y0 = -125;
 export const OW_H = 76;
 
 function buildOverworld(): string[][] {
@@ -29,6 +31,60 @@ function buildOverworld(): string[][] {
   // Side borders
   fill(0, OW_Y0, 1, OW_H - 1, "T");
   fill(OW_W - 2, OW_Y0, OW_W - 1, OW_H - 1, "T");
+
+  // ---------- SERRA DO CIPÓ (y -125..-93) ----------
+  // A town on the river below the waterfall. North of it, the half-built Ponte do Cipó.
+  fill(0, -125, OW_W - 1, -124, "T");
+  fill(2, -123, 29, -122, "~");
+  put([[15, -122]], "=");
+  fill(2, -121, 14, -121, "T");
+  fill(16, -121, 29, -121, "T");
+  put([[15, -121]], ",");
+  fill(2, -120, 13, -119, "T");
+  fill(18, -120, 29, -119, "T");
+  fill(15, -120, 16, -93, ",");
+  put([[14, -120], [17, -119]], "f");
+  // The waterfall pours off the cliff into a pool, and the river runs south along the west edge.
+  fill(2, -118, 9, -113, "k");
+  fill(5, -118, 6, -113, "w");
+  fill(2, -112, 9, -107, "~");
+  fill(2, -106, 4, -93, "~");
+  put([[10, -118], [11, -117], [13, -118], [17, -118], [28, -118], [29, -117], [24, -118]], "T");
+  fill(10, -115, 13, -113, "h");
+  fill(18, -116, 24, -112, "A"); // Marina's arena
+  fill(26, -116, 29, -114, "h");
+  fill(10, -111, 29, -111, ",");
+  put([[12, -112], [28, -113], [28, -112]], ",");
+  put([[10, -108], [10, -105], [5, -104], [6, -102], [8, -106]], "f");
+  fill(12, -108, 19, -103, "s");
+  fill(15, -106, 16, -105, "O");
+  fill(21, -107, 24, -104, "h");
+  fill(23, -103, 23, -98, ",");
+  fill(6, -101, 10, -98, "J"); // healing center
+  fill(24, -101, 27, -98, "Y"); // shop
+  fill(5, -97, 27, -97, ",");
+  put([[12, -101], [19, -101], [28, -103], [29, -99], [13, -94], [18, -94], [6, -94], [26, -94], [29, -108], [25, -109]], "f");
+  put([[5, -95], [9, -94], [11, -99], [20, -95], [24, -94], [28, -95], [29, -105], [18, -99]], "T");
+  fill(0, -92, OW_W - 1, -92, "T");
+  fill(15, -92, 16, -92, ",");
+
+  // ---------- ROUTE 4 (y -91..-73) ----------
+  // The Lapinha's north exit opens onto a hillside; the road loops east and north to the town.
+  fill(15, -91, 16, -86, ",");
+  fill(3, -91, 12, -87, '"');
+  fill(19, -91, 28, -87, '"');
+  fill(2, -86, 12, -86, "L");
+  fill(18, -86, 29, -86, "L");
+  fill(15, -85, 26, -84, ",");
+  fill(25, -83, 26, -76, ",");
+  fill(6, -76, 24, -75, ",");
+  fill(3, -80, 8, -77, "U"); // the Lapinha's north mouth
+  fill(2, -84, 9, -81, "T");
+  fill(10, -83, 22, -78, '"');
+  put([[13, -91], [14, -88], [17, -90], [17, -87], [2, -91], [29, -91], [28, -84]], "T");
+  put([[2, -76], [2, -73], [9, -73], [12, -74], [20, -73], [23, -80], [28, -79], [29, -75], [27, -82], [10, -84]], "T");
+  put([[14, -85], [27, -77], [11, -77], [18, -74], [4, -74]], "r");
+  put([[3, -75], [8, -74], [16, -73], [24, -74], [28, -81], [13, -84], [3, -85]], "f");
 
   // ---------- ROUTE 3 (y -72..-37, north of Route 2) ----------
   // Cerrado hills climbing to the Gruta da Lapinha, with a Healing Center at the cave mouth.
@@ -195,7 +251,7 @@ export function owTile(x: number, y: number): string {
 }
 
 // ---------- Buildings ----------
-export type BuildingKind = "home" | "rivalhouse" | "lab" | "center" | "mart" | "church" | "arena" | "house" | "cave";
+export type BuildingKind = "home" | "rivalhouse" | "lab" | "center" | "mart" | "church" | "arena" | "waterarena" | "house" | "cave";
 export interface Building {
   letter: string;
   kind: BuildingKind;
@@ -205,11 +261,13 @@ export interface Building {
   h: number;
   door: [number, number];
   interior?: MapId;
+  /** Where you arrive inside, when it isn't the interior's door mat (the Lapinha's north mouth). */
+  entry?: [number, number, Dir];
   color: string;
   roof: string;
 }
 
-const B_INFO: Record<string, { kind: BuildingKind; interior?: MapId; color: string; roof: string }> = {
+const B_INFO: Record<string, { kind: BuildingKind; interior?: MapId; entry?: [number, number, Dir]; color: string; roof: string }> = {
   H: { kind: "home", interior: "home", color: "#f4e3c1", roof: "#c8553d" },
   R: { kind: "rivalhouse", interior: "rivalhouse", color: "#cfe3f0", roof: "#3f6fb0" },
   P: { kind: "lab", interior: "lab", color: "#eeeeea", roof: "#6e7f8e" },
@@ -221,6 +279,10 @@ const B_INFO: Record<string, { kind: BuildingKind; interior?: MapId; color: stri
   G: { kind: "arena", interior: "arena1", color: "#8d8478", roof: "#f0a030" },
   Q: { kind: "center", interior: "center3", color: "#fbf6ef", roof: "#e0463c" },
   V: { kind: "cave", interior: "lapinha1", color: "#b3a58c", roof: "#8a7d68" },
+  U: { kind: "cave", interior: "lapinha2", entry: [14, 1, "down"], color: "#b3a58c", roof: "#8a7d68" },
+  J: { kind: "center", interior: "center4", color: "#fbf6ef", roof: "#e0463c" },
+  Y: { kind: "mart", interior: "mart3", color: "#fbf6ef", roof: "#3a7bd5" },
+  A: { kind: "waterarena", interior: "arena2", color: "#e6f3f7", roof: "#7cc4f0" },
   h: { kind: "house", color: "#f7c873", roof: "#b8472e" },
 };
 const HOUSE_COLORS = ["#f7c873", "#9fd3c7", "#f2a6a0", "#c3b1e1"];
@@ -240,7 +302,8 @@ function findBuildings(): Building[] {
       for (let yy = y; yy <= y1; yy++) for (let xx = x; xx <= x1; xx++) seen.add(`${xx},${yy}`);
       const w = x1 - x + 1;
       const h = y1 - y + 1;
-      const color = info.kind === "house" ? HOUSE_COLORS[out.length % HOUSE_COLORS.length] : info.color;
+      // Colour by position, so adding buildings elsewhere never repaints the old ones.
+      const color = info.kind === "house" ? HOUSE_COLORS[(((x + 2 * y) % 4) + 4) % 4] : info.color;
       out.push({ letter: ch, ...info, color, x, y, w, h, door: [x + Math.floor(w / 2), y1] });
     }
   return out;
@@ -253,13 +316,16 @@ export const BUILDINGS = findBuildings();
 //   f plant  r rug  c counter  h healing machine  p PC  m lab machine  a starter table
 //   x shop shelf  k bench  o arena boulder
 // Cave chars (maps with cave: true): # rock  . floor (wild encounters)  d exit mat  o boulder
-//   * crystals  H hole down  U ladder up  X rockfall  Z fossil
+//   * crystals  H hole down  U ladder up  X rockfall  Z fossil  D way out to the north mouth
+// Pool chars (maps with pool: true): # wall  . deck  d exit mat  w water  n stepping stone
+//   ^ v < > currents that carry you along until you reach still ground
 export interface Interior {
   rows: string[];
   floor: string;
   wall: string;
   music: string;
   cave?: boolean;
+  pool?: boolean;
 }
 
 const HOME_ROWS = ["##########", "#bbv...ss#", "#........#", "#..tt..B.#", "#..tt..B.#", "#........#", "#f..rr..f#", "####d#####"];
@@ -289,7 +355,7 @@ const LAPINHA_1F = [
   "##########d###########",
 ];
 const LAPINHA_B1F = [
-  "##############X#####",
+  "##############D#####",
   "#........#.........#",
   "#..U.....#....o....#",
   "#........#.........#",
@@ -304,6 +370,7 @@ const LAPINHA_B1F = [
   "#..........##......#",
   "####################",
 ];
+// The north exit on B1F (D) opens onto Route 4 through the U cave mouth.
 const LAPINHA_B2F = [
   "########################",
   "#.....#......#.........#",
@@ -323,6 +390,27 @@ const LAPINHA_B2F = [
   "########################",
 ];
 
+// Arena da Serra do Cipó: three bands of pools between decks. Stepping stones cross them, and
+// the currents either help you along or wash you back to the deck below.
+const CIPO_ARENA = [
+  "#############",
+  "#ww.......ww#",
+  "#w.........w#",
+  "#wvwwww^<<<w#",
+  "#wnv<<<wwwnw#",
+  "#...........#",
+  "#wwww^wv<<<w#",
+  "#wn>>^wvwwnw#",
+  "#wnwwwwvwwnw#",
+  "#...........#",
+  "#>>>vwwnwwvw#",
+  "#nwwvnnnwwvw#",
+  "#nwwvnwwwwnw#",
+  "#...........#",
+  "#...........#",
+  "######d######",
+];
+
 export const INTERIORS: Record<Exclude<MapId, "overworld">, Interior> = {
   home: { rows: HOME_ROWS, floor: "#d9b98a", wall: "#f3e6cf", music: "town" },
   rivalhouse: { rows: HOME_ROWS, floor: "#c9d7b0", wall: "#e5eef5", music: "town" },
@@ -336,9 +424,19 @@ export const INTERIORS: Record<Exclude<MapId, "overworld">, Interior> = {
   lapinha1: { rows: LAPINHA_1F, floor: "#6e6253", wall: "#5a4f43", music: "cave", cave: true },
   lapinha2: { rows: LAPINHA_B1F, floor: "#5f5548", wall: "#4b4238", music: "cave", cave: true },
   lapinha3: { rows: LAPINHA_B2F, floor: "#554b40", wall: "#40382f", music: "cave", cave: true },
+  center4: { rows: CENTER_ROWS, floor: "#f5e9e0", wall: "#fdf7f2", music: "lab" },
+  mart3: { rows: MART_ROWS, floor: "#dfe8f2", wall: "#f5f8fb", music: "lab" },
+  arena2: { rows: CIPO_ARENA, floor: "#d8e8ee", wall: "#b8dcea", music: "town", pool: true },
 };
 
 export const isCave = (map: MapId) => map !== "overworld" && !!INTERIORS[map].cave;
+export const isPool = (map: MapId) => map !== "overworld" && !!INTERIORS[map].pool;
+
+const CURRENTS: Record<string, Dir> = { "^": "up", v: "down", "<": "left", ">": "right" };
+/** The way a current tile carries you, or null on still ground. */
+export function currentAt(map: MapId, x: number, y: number): Dir | null {
+  return isPool(map) ? CURRENTS[tileAt(map, x, y)] ?? null : null;
+}
 
 /** Ladders and holes, linked in pairs. You arrive standing on the other end. */
 const CAVE_LINKS: [MapId, number, number, MapId, number, number][] = [
@@ -369,11 +467,14 @@ export function buildingForInterior(map: MapId): Building | undefined {
 export type Look =
   | "player" | "rival" | "prof" | "mom" | "nurse" | "clerk" | "girl" | "boy" | "oldman"
   | "oldwoman" | "worker" | "youngster" | "lass" | "aide" | "sister" | "man" | "miner" | "leader"
-  | "bugcatcher" | "grunt" | "scientist";
+  | "bugcatcher" | "grunt" | "scientist" | "swimmer" | "fisherman" | "marina" | "picnicker";
+
+/** A trainer's creature: species and level, optionally with a hand-picked moveset or strong IVs. */
+export type TeamSlot = [SpeciesId, number] | [SpeciesId, number, { moves?: MoveId[]; perfect?: boolean }];
 
 export interface TrainerDef {
   name: L;
-  team: [SpeciesId, number][];
+  team: TeamSlot[];
   reward: number;
   intro: L;
   win: L; // shown in battle when you win
@@ -382,6 +483,8 @@ export interface TrainerDef {
   music?: string;
   /** Arena leaders hand over a badge (stored as this flag) when beaten. */
   badge?: string;
+  /** ...and an MT. */
+  mt?: ItemId;
 }
 
 export interface NpcDef {
@@ -521,6 +624,51 @@ export const NPCS: NpcDef[] = [
     { en: "Lately, men in dark bandanas go in and come out with sacks. They're no scientists, I tell you.", pt: "Ultimamente, uns homens de bandana escura entram e saem com sacos. Cientistas é que não são, isso eu garanto." },
   ] },
 
+  // Route 4
+  {
+    id: "nina", map: "overworld", x: 20, y: -81, facing: "left", look: "picnicker",
+    trainer: {
+      name: { en: "Picnicker Nina", pt: "Campista Nina" },
+      team: [["canelinha", 14], ["jararaca", 15]],
+      reward: 450,
+      intro: { en: "Careful where you step! Canelinha grow all over this hillside.", pt: "Cuidado onde pisa! Tem Canelinha nascendo por todo este morro." },
+      win: { en: "You trampled my whole picnic!", pt: "Você pisoteou meu piquenique inteiro!" },
+      after: { en: "Canela-de-ema only grows up here in the serras. Some of them are hundreds of years old!", pt: "Canela-de-ema só nasce aqui nas serras. Tem umas com centenas de anos!" },
+      sight: 3,
+    },
+  },
+  {
+    id: "grunt4", map: "overworld", x: 24, y: -88, facing: "left", look: "grunt",
+    trainer: {
+      name: { en: "Garimpo Grunt", pt: "Capanga do Garimpo" },
+      team: [["jararaca", 15], ["morceguinho", 16]],
+      reward: 480,
+      intro: { en: "You again? The kid from the cave? The boss said to slow down anybody who followed us!", pt: "Você de novo? O pirralho da gruta? O chefe mandou atrasar quem seguisse a gente!" },
+      win: { en: "Slowed down... me.", pt: "Quem atrasou fui eu..." },
+      after: { en: "The rest of the crew went north, over the river. Something about an old man with a fancy collection.", pt: "O resto da turma foi para o norte, depois do rio. Algo sobre um velho com uma coleção chique." },
+      sight: 4,
+    },
+  },
+  { id: "r4Hiker", map: "overworld", x: 12, y: -76, facing: "down", look: "miner", lookAround: true, text: [
+    { en: "Phew, daylight! That tunnel used to be blocked, but the crew cleared it.", pt: "Ufa, luz do dia! Esse túnel estava bloqueado, mas a equipe liberou." },
+    { en: "Serra do Cipó is just up the road. You can hear the waterfall from here!", pt: "A Serra do Cipó fica logo ali. Dá para ouvir a cachoeira daqui!" },
+  ] },
+
+  // Serra do Cipó
+  { id: "fisher", map: "overworld", x: 10, y: -109, facing: "left", look: "fisherman", script: "fisherman" },
+  { id: "cipoGirl", map: "overworld", x: 20, y: -109, facing: "down", look: "girl", lookAround: true, text: [{ en: "Marina's Arena is a big indoor pool. The currents in there will sweep you right off your feet!", pt: "A Arena da Marina é uma piscina coberta enorme. As correntezas lá dentro levam você embora!" }] },
+  { id: "cipoOld", map: "overworld", x: 12, y: -102, facing: "right", look: "oldwoman", text: [{ en: "That's the Cachoeira da Farofa. Seventy meters of water falling off the serra, and it never stops.", pt: "Aquela é a Cachoeira da Farofa. Setenta metros de água caindo da serra, e nunca para." }] },
+  { id: "cipoMan", map: "overworld", x: 19, y: -96, facing: "left", look: "man", text: [
+    { en: "Some fishermen swear there's an eel in the river that shocks the hooks right off their lines. A Poraquê, they call it.", pt: "Tem pescador que jura que tem uma enguia no rio que dá choque e solta o anzol da linha. Poraquê, eles chamam." },
+    { en: "Me, I've never seen one. Up north, maybe.", pt: "Eu mesmo nunca vi. Lá para o norte, quem sabe." },
+  ] },
+  { id: "cipoBoy", map: "overworld", x: 27, y: -109, facing: "down", look: "boy", text: [{ en: "Some men in dark bandanas ran across the bridge before it was even finished! They were carrying sacks.", pt: "Uns homens de bandana escura atravessaram a ponte antes mesmo de ela ficar pronta! Estavam carregando sacos." }] },
+  { id: "rival2", map: "overworld", x: 15, y: -120, facing: "down", look: "rival", visible: (f) => !!f.rivalCipoShow },
+  { id: "worker4", map: "overworld", x: 15, y: -121, facing: "down", look: "worker", text: [
+    { en: "Hold it! The Ponte do Cipó isn't finished. We still have half the planks to lay.", pt: "Espere! A Ponte do Cipó não está pronta. Ainda falta metade das tábuas." },
+    { en: "And some joker walked off with our tools! Come back later.", pt: "E algum engraçadinho sumiu com as nossas ferramentas! Volte mais tarde." },
+  ] },
+
   // Cidade Ipê Arena
   {
     id: "arenaT1", map: "arena1", x: 9, y: 4, facing: "left", look: "miner",
@@ -558,8 +706,58 @@ export const NPCS: NpcDef[] = [
       sight: 0,
       music: "leader",
       badge: "badgeTopaz",
+      mt: "mt01",
     },
   },
+
+  // Arena da Serra do Cipó
+  {
+    id: "swimDuda", map: "arena2", x: 11, y: 9, facing: "left", look: "swimmer",
+    trainer: {
+      name: { en: "Swimmer Duda", pt: "Nadadora Duda" },
+      team: [["piabinha", 16], ["lontrinha", 17]],
+      reward: 480,
+      intro: { en: "Made it across the first pool? The currents only get trickier!", pt: "Passou da primeira piscina? As correntezas só ficam mais difíceis!" },
+      win: { en: "I got swept away...", pt: "Fui levada pela correnteza..." },
+      after: { en: "Stick to the stones. The currents know where they're taking you, but you don't!", pt: "Fique nas pedras. A correnteza sabe para onde leva você, mas você não!" },
+      sight: 4,
+    },
+  },
+  {
+    id: "swimTeo", map: "arena2", x: 11, y: 5, facing: "left", look: "swimmer",
+    trainer: {
+      name: { en: "Swimmer Téo", pt: "Nadador Téo" },
+      team: [["lontrinha", 17], ["piabinha", 18]],
+      reward: 540,
+      intro: { en: "Marina's just one pool away. You'll have to get through me first!", pt: "A Marina está a uma piscina daqui. Primeiro você tem que passar por mim!" },
+      win: { en: "Glub glub...", pt: "Glub glub..." },
+      after: { en: "Look for a current that flows the way you want to go. Let the water do the work.", pt: "Procure uma correnteza que vá para onde você quer. Deixe a água trabalhar." },
+      sight: 6,
+    },
+  },
+  {
+    id: "leader2", map: "arena2", x: 6, y: 1, facing: "down", look: "marina",
+    trainer: {
+      name: { en: "Leader Marina", pt: "Líder Marina" },
+      team: [
+        ["piabinha", 18],
+        ["lontrinha", 19, { moves: ["aquajet", "bubblebeam", "bite", "tailwhip"] }],
+        ["pirarucao", 21, { moves: ["waterfall", "bite", "bubblebeam", "screech"], perfect: true }],
+      ],
+      reward: 2100,
+      intro: { en: "Welcome to the Arena da Serra do Cipó! I'm Marina. My creatures were raised under the waterfalls, and they hit just as hard. Ready to get soaked?", pt: "Bem-vindo à Arena da Serra do Cipó! Sou a Marina. Minhas criaturas cresceram debaixo das cachoeiras, e batem com a mesma força. Pronto para se molhar?" },
+      win: { en: "Wow! You swam right through my currents!", pt: "Uau! Você nadou direto pelas minhas correntezas!" },
+      after: { en: "The bridge north should be done soon. Until then, go fishing! You never know what's in the river.", pt: "A ponte ao norte deve ficar pronta logo. Até lá, vá pescar! Nunca se sabe o que tem no rio." },
+      sight: 0,
+      music: "leader",
+      badge: "badgeAquamarine",
+      mt: "mt02",
+    },
+  },
+  { id: "nurse4", map: "center4", x: 5, y: 1, facing: "down", look: "nurse", script: "nurse" },
+  { id: "visitor4", map: "center4", x: 8, y: 5, facing: "left", look: "swimmer", text: [{ en: "Marina uses Water creatures. Grass and Electric moves work wonders against them!", pt: "A Marina usa criaturas de Água. Golpes de Planta e Elétricos fazem maravilhas contra elas!" }] },
+  { id: "clerk3", map: "mart3", x: 2, y: 1, facing: "down", look: "clerk", script: "clerkCipo" },
+  { id: "shopper3", map: "mart3", x: 7, y: 5, facing: "up", look: "oldman", text: [{ en: "An MT can teach a move to any creature that can learn it, again and again. It never wears out!", pt: "Um MT ensina um golpe a qualquer criatura que possa aprender, quantas vezes quiser. Nunca gasta!" }] },
 
   // Interiors
   { id: "mom", map: "home", x: 2, y: 4, facing: "right", look: "mom", script: "mom" },
@@ -600,10 +798,6 @@ export const NPCS: NpcDef[] = [
       sight: 4,
     },
   },
-  { id: "worker3", map: "lapinha2", x: 14, y: 1, facing: "down", look: "worker", text: [
-    { en: "A rockslide blocked the tunnel to Serra do Cipó. Somebody's been blasting in here without a permit.", pt: "Um desmoronamento bloqueou o túnel para a Serra do Cipó. Alguém andou detonando aqui sem licença." },
-    { en: "Our crew is digging from the other side. Come back soon!", pt: "Nossa equipe está cavando do outro lado. Volte logo!" },
-  ] },
   {
     id: "grunt2", map: "lapinha2", x: 8, y: 10, facing: "left", look: "grunt",
     trainer: {
@@ -662,6 +856,11 @@ export const SIGNS: Sign[] = [
   { map: "overworld", x: 13, y: 7, text: { en: "CIDADE IPÊ ARENA\nLeader: Topázio\nThe rock-hard gem of Minas!", pt: "ARENA DE CIDADE IPÊ\nLíder: Topázio\nA joia dura como pedra de Minas!" } },
   { map: "overworld", x: 26, y: -2, text: { en: "ROUTE 2\nCidade Ipê ↓   Serra do Cipó ↑", pt: "ROTA 2\nCidade Ipê ↓   Serra do Cipó ↑" } },
   { map: "overworld", x: 14, y: -38, text: { en: "ROUTE 3\nRoute 2 ↓   Gruta da Lapinha ↑", pt: "ROTA 3\nRota 2 ↓   Gruta da Lapinha ↑" } },
+  { map: "overworld", x: 14, y: -77, text: { en: "ROUTE 4\nGruta da Lapinha ↓   Serra do Cipó ↑", pt: "ROTA 4\nGruta da Lapinha ↓   Serra do Cipó ↑" } },
+  { map: "overworld", x: 14, y: -93, text: { en: "SERRA DO CIPÓ\nWhere the waterfalls sing.", pt: "SERRA DO CIPÓ\nOnde as cachoeiras cantam." } },
+  { map: "overworld", x: 23, y: -110, text: { en: "SERRA DO CIPÓ ARENA\nLeader: Marina\nThe waterfall's fury!", pt: "ARENA DA SERRA DO CIPÓ\nLíder: Marina\nA fúria da cachoeira!" } },
+  { map: "overworld", x: 17, y: -120, text: { en: "PONTE DO CIPÓ\nUnder construction. No crossing!", pt: "PONTE DO CIPÓ\nEm obras. Passagem proibida!" } },
+  { map: "overworld", x: 11, y: -110, text: { en: "CACHOEIRA DA FAROFA\nNo swimming below the falls!", pt: "CACHOEIRA DA FAROFA\nProibido nadar abaixo da queda!" } },
   { map: "overworld", x: 14, y: -66, text: { en: "GRUTA DA LAPINHA\nLimestone caves of Lagoa Santa. Mind the bats!", pt: "GRUTA DA LAPINHA\nGrutas de calcário de Lagoa Santa. Cuidado com os morcegos!" } },
   { map: "overworld", x: 8, y: 62, text: { en: "{player}'s house", pt: "Casa de {player}" } },
   { map: "overworld", x: 29, y: 61, text: { en: "{rival}'s house", pt: "Casa de {rival}" } },
@@ -694,6 +893,10 @@ export const GROUND_ITEMS: GroundItem[] = [
   { id: "gi15", map: "lapinha2", x: 1, y: 12, item: "despertador", qty: 1 },
   { id: "gi16", map: "lapinha3", x: 22, y: 14, item: "curatotal", qty: 1 },
   { id: "gi17", map: "lapinha3", x: 12, y: 1, item: "superpocao", qty: 1 },
+  { id: "gi18", map: "overworld", x: 28, y: -74, item: "superpocao", qty: 1 },
+  { id: "gi19", map: "overworld", x: 3, y: -90, item: "superamuleto", qty: 2 },
+  { id: "gi20", map: "overworld", x: 11, y: -82, item: "desparalisante", qty: 1 },
+  { id: "gi21", map: "overworld", x: 27, y: -118, item: "reviver", qty: 1 },
 ];
 
 // ---------- Wild encounters ----------
@@ -718,6 +921,14 @@ const CAVE_DEEP: EncounterSlot[] = [
 export function encounterTable(map: MapId, y: number): EncounterSlot[] {
   if (map === "lapinha1" || map === "lapinha2") return CAVE_UPPER;
   if (map === "lapinha3") return CAVE_DEEP;
+  if (y < -72)
+    return [
+      { species: "jararaca", min: 13, max: 16, weight: 28 },
+      { species: "canelinha", min: 13, max: 15, weight: 24 },
+      { species: "pardalito", min: 13, max: 15, weight: 22 },
+      { species: "ratico", min: 13, max: 15, weight: 16 },
+      { species: "lagartix", min: 13, max: 14, weight: 10 },
+    ];
   if (y < -36)
     return [
       { species: "pardalito", min: 11, max: 13, weight: 30 },
@@ -752,6 +963,16 @@ export function encounterTable(map: MapId, y: number): EncounterSlot[] {
   ];
 }
 
+/** What bites when you fish with the Vara de Pescar. */
+export function fishTable(y: number): EncounterSlot[] {
+  if (y < -72)
+    return [
+      { species: "piabinha", min: 10, max: 15, weight: 85 },
+      { species: "lontrinha", min: 13, max: 15, weight: 15 },
+    ];
+  return [{ species: "piabinha", min: 5, max: 10, weight: 100 }];
+}
+
 // ---------- Tile queries ----------
 export function tileAt(map: MapId, x: number, y: number): string {
   if (map === "overworld") {
@@ -764,10 +985,12 @@ export function tileAt(map: MapId, x: number, y: number): string {
 
 const OW_WALK = new Set([".", ",", '"', "f", "s", "="]);
 const IN_WALK = new Set([".", "d", "r"]);
-const CAVE_WALK = new Set([".", "d", "H", "U"]);
+const CAVE_WALK = new Set([".", "d", "H", "U", "D"]);
+const POOL_WALK = new Set([".", "d", "n", "^", "v", "<", ">"]);
 
 export function isWalkableTile(map: MapId, x: number, y: number): boolean {
   const t = tileAt(map, x, y);
   if (map === "overworld") return OW_WALK.has(t);
-  return (INTERIORS[map].cave ? CAVE_WALK : IN_WALK).has(t);
+  const def = INTERIORS[map];
+  return (def.cave ? CAVE_WALK : def.pool ? POOL_WALK : IN_WALK).has(t);
 }

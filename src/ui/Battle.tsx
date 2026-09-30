@@ -181,7 +181,7 @@ function BattleInner() {
     r?.(a);
   };
 
-  const bagItems = (Object.keys(bag) as ItemId[]).filter((id) => (bag[id] ?? 0) > 0 && ITEMS[id].pocket !== "key");
+  const bagItems = (Object.keys(bag) as ItemId[]).filter((id) => (bag[id] ?? 0) > 0 && ITEMS[id].pocket !== "key" && ITEMS[id].pocket !== "mts");
 
   function choosePartyMember(i: number) {
     if (!menu || menu.kind !== "party") return;

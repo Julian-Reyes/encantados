@@ -590,6 +590,238 @@ function Luazinha() {
   );
 }
 
+// ---------------------------------------------------------------- Route 4 and Serra do Cipó
+/** Jararaca / Jararacuçu: a coiled pit viper with its head raised, zigzag blotches on the coils. */
+function Viper({ big }: { big: boolean }) {
+  const body = big ? "#2e2a24" : "#9a7a4a";
+  const mark = big ? "#e0b040" : "#4a3a22";
+  const belly = big ? "#e8d27a" : "#d8c49a";
+  const head = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (head.current) head.current.rotation.y = Math.sin(clock.elapsedTime * 1.3) * 0.25;
+  });
+  const coils: [number, number][] = [[0.09, 0.3], [0.22, 0.24], [0.33, 0.17]];
+  return (
+    <group scale={big ? 1.5 : 1}>
+      {coils.map(([y, r], i) => (
+        <group key={i}>
+          <Tor p={[0, y, -0.04]} s={[r, r, 0.3]} r={[Math.PI / 2, 0, i]} c={body} />
+          {[0, 1, 2, 3, 4, 5].map((k) => {
+            const a = (k / 6) * Math.PI * 2 + i;
+            return <Bx key={k} p={[Math.cos(a) * r, y + 0.07 * (r / 0.3) + 0.01, -0.04 + Math.sin(a) * r]} s={[0.07 * (r / 0.3) + 0.02, 0.02, 0.07 * (r / 0.3) + 0.02]} r={[0, a + 0.785, 0]} c={mark} shadow={false} />;
+          })}
+        </group>
+      ))}
+      {/* the neck rises out of the top coil */}
+      <Sph p={[0, 0.48, 0.04]} s={[0.075, 0.18, 0.08]} r={[0.35, 0, 0]} c={body} />
+      <Sph p={[0, 0.46, 0.09]} s={[0.05, 0.14, 0.04]} r={[0.35, 0, 0]} c={belly} />
+      <group ref={head} position={[0, 0.64, 0.13]}>
+        <Sph s={[0.13, 0.075, 0.16]} c={body} />
+        <Sph p={[0, 0.005, 0.1]} s={[0.08, 0.05, 0.1]} c={body} />
+        <Bx p={[0, 0.07, -0.02]} s={[0.1, 0.012, 0.08]} r={[0, 0.785, 0]} c={mark} shadow={false} />
+        {[-1, 1].map((sd) => (
+          <group key={sd}>
+            <Eye p={[sd * 0.085, 0.03, 0.06]} s={0.028} c={big ? "#c02a1a" : "#e0c030"} />
+            <Sph p={[sd * 0.05, 0, 0.19]} s={0.012} c="#1a1410" shadow={false} />
+          </group>
+        ))}
+        {/* forked tongue */}
+        <Bx p={[0, -0.02, 0.24]} s={[0.012, 0.008, 0.08]} c="#d0304a" shadow={false} />
+        <Bx p={[-0.012, -0.02, 0.29]} s={[0.008, 0.008, 0.03]} r={[0, 0.5, 0]} c="#d0304a" shadow={false} />
+        <Bx p={[0.012, -0.02, 0.29]} s={[0.008, 0.008, 0.03]} r={[0, -0.5, 0]} c="#d0304a" shadow={false} />
+      </group>
+      <Cn p={[0.3, 0.05, -0.2]} s={[0.035, 0.18, 0.035]} r={[0, 0, -1.3]} c={body} />
+    </group>
+  );
+}
+const Jararaca = () => <Viper big={false} />;
+const Jararacucu = () => <Viper big />;
+
+/** Lontrinha / Ariranha: an otter sitting up on its haunches, with a flat tail behind it. */
+function Otter({ big }: { big: boolean }) {
+  const fur = big ? "#5a3522" : "#8a5a3a";
+  const light = big ? "#f0e6d0" : "#e0c8a0";
+  const tail = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (tail.current) tail.current.rotation.y = Math.sin(clock.elapsedTime * 2.2) * 0.3;
+  });
+  return (
+    <group scale={big ? 1.45 : 1}>
+      <Sph p={[0, 0.3, -0.02]} s={[0.21, 0.3, 0.19]} c={fur} />
+      {big ? (
+        // the giant otter's pale throat patch, a different shape on every one
+        <group>
+          <Sph p={[0, 0.5, 0.12]} s={[0.12, 0.08, 0.06]} c={light} />
+          <Sph p={[0.05, 0.42, 0.14]} s={[0.06, 0.06, 0.04]} c={light} />
+        </group>
+      ) : (
+        <Sph p={[0, 0.34, 0.1]} s={[0.14, 0.22, 0.1]} c={light} />
+      )}
+      <Sph p={[0, 0.66, 0.03]} s={[0.17, 0.14, 0.16]} c={fur} />
+      <Sph p={[0, 0.62, 0.15]} s={[0.1, 0.07, 0.07]} c={big ? fur : light} />
+      <Sph p={[0, 0.645, 0.215]} s={[0.035, 0.025, 0.02]} c="#1a1410" shadow={false} />
+      <Eye p={[-0.075, 0.7, 0.13]} s={0.035} c="#1a1410" />
+      <Eye p={[0.075, 0.7, 0.13]} s={0.035} c="#1a1410" />
+      {[-1, 1].map((sd) => (
+        <group key={sd}>
+          <Sph p={[sd * 0.13, 0.76, -0.02]} s={[0.04, 0.035, 0.025]} c={fur} />
+          {/* whiskers */}
+          {[0, 1].map((k) => (
+            <Bx key={k} p={[sd * 0.1, 0.63 - k * 0.02, 0.18]} s={[0.1, 0.006, 0.006]} r={[0, sd * -0.3, sd * (k ? -0.15 : 0.1)]} c="#f5f0e0" shadow={false} />
+          ))}
+          <Sph p={[sd * 0.1, 0.38, 0.15]} s={[0.045, 0.08, 0.045]} r={[0.5, 0, sd * -0.3]} c={fur} />
+          <Sph p={[sd * 0.12, 0.05, 0.06]} s={[0.08, 0.05, 0.12]} c={fur} />
+        </group>
+      ))}
+      <group ref={tail} position={[0, 0.1, -0.18]}>
+        <Sph p={[0, 0, -0.16]} s={[0.1, 0.05, 0.22]} r={[-0.15, 0, 0]} c={fur} />
+        <Sph p={[0, 0.02, -0.34]} s={[0.07, 0.035, 0.1]} c={fur} />
+      </group>
+    </group>
+  );
+}
+const Lontrinha = () => <Otter big={false} />;
+const Ariranha = () => <Otter big />;
+
+/** Canelinha / Canelão: canela-de-ema, a black fibrous stem with a tuft of stiff blade leaves (and violet flowers once grown). */
+function Canela({ big }: { big: boolean }) {
+  const stem = "#2e2a26";
+  const leaf = big ? "#6a8a4a" : "#7a9a5a";
+  const crown = (p: V3, k: number, flowers: boolean) => (
+    <group position={p} scale={k}>
+      <Sph s={[0.12, 0.08, 0.12]} c="#4a5a34" />
+      {Array.from({ length: 9 }, (_, i) => {
+        const a = (i / 9) * Math.PI * 2;
+        return <Cn key={i} p={[Math.cos(a) * 0.1, 0.08, Math.sin(a) * 0.1]} s={[0.025, 0.3, 0.025]} r={[Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9]} c={i % 2 ? leaf : "#8aaa6a"} />;
+      })}
+      <Cn p={[0, 0.16, 0]} s={[0.03, 0.26, 0.03]} c={leaf} />
+      {flowers &&
+        [0, 2.1, 4.2].map((a) => (
+          <group key={a} position={[Math.cos(a) * 0.08, 0.24, Math.sin(a) * 0.08]}>
+            <Cn s={[0.06, 0.1, 0.06]} r={[Math.PI, 0, 0]} c="#b07ad0" />
+            <Sph p={[0, 0.02, 0]} s={0.022} c="#f5e070" shadow={false} />
+          </group>
+        ))}
+    </group>
+  );
+  if (!big)
+    return (
+      <group>
+        <Cy p={[0, 0.3, 0]} s={[0.1, 0.4, 0.1]} c={stem} />
+        {[0.18, 0.3, 0.42].map((h) => (
+          <Tor key={h} p={[0, h, 0]} s={[0.1, 0.1, 0.12]} r={[Math.PI / 2, 0, h * 10]} c="#3e3830" />
+        ))}
+        <Eye p={[-0.045, 0.42, 0.09]} s={0.03} c="#f5e070" />
+        <Eye p={[0.045, 0.42, 0.09]} s={0.03} c="#f5e070" />
+        {[-1, 1].map((sd) => (
+          <Cn key={sd} p={[sd * 0.09, 0.06, 0.02]} s={[0.035, 0.16, 0.035]} r={[0, 0, sd * 0.5]} c={stem} />
+        ))}
+        {crown([0, 0.52, 0], 1, false)}
+      </group>
+    );
+  return (
+    <group>
+      <Cy p={[0, 0.42, 0]} s={[0.15, 0.62, 0.15]} c={stem} />
+      {[0.2, 0.36, 0.52, 0.68].map((h) => (
+        <Tor key={h} p={[0, h, 0]} s={[0.15, 0.15, 0.14]} r={[Math.PI / 2, 0, h * 10]} c="#3e3830" />
+      ))}
+      <Eye p={[-0.06, 0.62, 0.14]} s={0.035} c="#f5e070" />
+      <Eye p={[0.06, 0.62, 0.14]} s={0.035} c="#f5e070" />
+      {/* the stem forks into two branches, each with its own crown */}
+      {[-1, 1].map((sd) => (
+        <group key={sd}>
+          <Cy p={[sd * 0.13, 0.86, 0]} s={[0.06, 0.32, 0.06]} r={[0, 0, sd * -0.6]} c={stem} />
+          <Cn p={[sd * 0.13, 0.07, 0.03]} s={[0.05, 0.2, 0.05]} r={[0, 0, sd * 0.5]} c={stem} />
+        </group>
+      ))}
+      {crown([-0.26, 1.0, 0], 1.1, true)}
+      {crown([0.26, 1.0, 0], 1.1, true)}
+      {crown([0, 0.78, -0.02], 0.9, true)}
+    </group>
+  );
+}
+const Canelinha = () => <Canela big={false} />;
+const Canelao = () => <Canela big />;
+
+function Piabinha() {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (ref.current) {
+      ref.current.position.y = 0.4 + Math.sin(t * 3) * 0.05;
+      ref.current.rotation.y = Math.sin(t * 9) * 0.12;
+    }
+  });
+  const silver = "#c0c8d0";
+  return (
+    <group ref={ref} scale={1.7}>
+      <Sph s={[0.1, 0.13, 0.22]} c={silver} />
+      <Sph p={[0, -0.03, 0.02]} s={[0.085, 0.08, 0.18]} c="#eef2f5" />
+      {/* the dark stripe and the red spot on the tail, like a real lambari */}
+      <Bx p={[0, 0.01, -0.03]} s={[0.205, 0.025, 0.28]} c="#5a6a7a" shadow={false} />
+      <Sph p={[0, 0, -0.2]} s={[0.05, 0.05, 0.03]} c="#e0342c" />
+      <Cn p={[0, 0, -0.28]} s={[0.1, 0.1, 0.02]} r={[Math.PI / 2, 0, 0]} c="#f07a3a" />
+      <Cn p={[0, 0.14, -0.02]} s={[0.04, 0.08, 0.1]} r={[-0.5, 0, 0]} c="#9aa4b0" />
+      <Eye p={[-0.075, 0.04, 0.12]} s={0.04} c="#1a1a24" white />
+      <Eye p={[0.075, 0.04, 0.12]} s={0.04} c="#1a1a24" white />
+      <Sph p={[0, -0.03, 0.21]} s={[0.035, 0.025, 0.02]} c="#e08a9a" shadow={false} />
+      {[-1, 1].map((sd) => (
+        <Sph key={sd} p={[sd * 0.1, -0.05, 0.05]} s={[0.04, 0.02, 0.06]} r={[0, sd * 0.5, sd * 0.5]} c="#9aa4b0" />
+      ))}
+    </group>
+  );
+}
+
+/** Pirarucão: a giant arapaima rearing out of the water, olive at the head and blood-red towards the tail. */
+function Pirarucao() {
+  const head = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (head.current) head.current.rotation.x = Math.sin(clock.elapsedTime * 1.6) * 0.08;
+  });
+  // The body arcs from the tail, curled round on the ground to one side, up to the head.
+  const spine: [number, number, number, number, string][] = [
+    [0.95, 0.12, -0.35, 0.13, "#a8342a"],
+    [0.78, 0.16, -0.5, 0.17, "#b8402e"],
+    [0.5, 0.22, -0.55, 0.21, "#b8402e"],
+    [0.22, 0.34, -0.4, 0.24, "#8a4a36"],
+    [0.05, 0.54, -0.18, 0.26, "#5a5a42"],
+    [0, 0.78, 0, 0.27, "#4a5a44"],
+    [0, 1.02, 0.08, 0.25, "#44543e"],
+  ];
+  return (
+    <group scale={1.1}>
+      {spine.map(([x, y, z, r, c], i) => (
+        <group key={i}>
+          <Sph p={[x, y, z]} s={[r * 0.85, r, r]} c={c} />
+          {/* each big scale is edged in red */}
+          {i > 1 && [-1, 1].map((sd) => <Sph key={sd} p={[sd * r * 0.72, y, z + 0.04]} s={[0.02, r * 0.5, r * 0.5]} c={i > 3 ? "#8a3a2a" : "#c24a34"} shadow={false} />)}
+        </group>
+      ))}
+      <Sph p={[0, 0.72, 0.18]} s={[0.17, 0.3, 0.12]} r={[0.2, 0, 0]} c="#c8b48a" />
+      {/* tail fin and the long fins along the back */}
+      <Cn p={[1.16, 0.14, -0.22]} s={[0.26, 0.28, 0.04]} r={[0, 0.6, -Math.PI / 2]} c="#7a1f1a" />
+      <Cn p={[0.45, 0.42, -0.58]} s={[0.05, 0.28, 0.18]} r={[-0.3, 0, 0.5]} c="#7a1f1a" />
+      <group ref={head} position={[0, 1.22, 0.14]}>
+        <Sph s={[0.22, 0.18, 0.26]} c="#3e4a38" />
+        <Sph p={[0, 0.07, 0.04]} s={[0.2, 0.08, 0.22]} c="#4e5e46" />
+        {/* the lower jaw hangs open over a mouth full of teeth */}
+        <Sph p={[0, -0.1, 0.12]} s={[0.17, 0.06, 0.2]} r={[0.35, 0, 0]} c="#c8b48a" />
+        <Sph p={[0, -0.05, 0.16]} s={[0.13, 0.05, 0.14]} c="#5a1a1a" />
+        {[-0.08, -0.03, 0.03, 0.08].map((x) => (
+          <Cn key={x} p={[x, -0.01, 0.26]} s={[0.012, 0.035, 0.012]} r={[Math.PI, 0, 0]} c="#ffffff" />
+        ))}
+        {[-1, 1].map((sd) => (
+          <group key={sd}>
+            <Eye p={[sd * 0.15, 0.06, 0.12]} s={0.04} c="#e0c030" />
+            <Bx p={[sd * 0.13, 0.11, 0.14]} s={[0.1, 0.02, 0.02]} r={[0, 0, sd * 0.4]} c="#1e241a" shadow={false} />
+            <Cn p={[sd * 0.22, -0.05, -0.08]} s={[0.05, 0.14, 0.03]} r={[0.8, 0, sd * -1.1]} c="#7a1f1a" />
+          </group>
+        ))}
+      </group>
+    </group>
+  );
+}
+
 const MODELS: Record<SpeciesId, () => JSX.Element> = {
   fagulho: Fagulho, labaredo: Labaredo, bolhuga: Bolhuga, cascabolha: Cascabolha,
   brotapo: Brotapo, floresapo: Floresapo, pardalito: Pardalito, gavionte: Gavionte,
@@ -597,6 +829,8 @@ const MODELS: Record<SpeciesId, () => JSX.Element> = {
   pedrudo: Pedrudo, rochedao: Rochedao, chispito: Chispito, chispao: Chispao,
   corujita: Corujita, rasgamorte: Rasgamorte,
   morceguinho: Morceguinho, morcegao: Morcegao, luazinha: Luazinha,
+  jararaca: Jararaca, jararacucu: Jararacucu, lontrinha: Lontrinha, ariranha: Ariranha,
+  canelinha: Canelinha, canelao: Canelao, piabinha: Piabinha, pirarucao: Pirarucao,
 };
 
 /** A creature with a gentle idle bounce. */

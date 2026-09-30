@@ -381,6 +381,18 @@ function CaveView({ map }: { map: MapId }) {
             ))}
           </group>,
         );
+      else if (ch === "D")
+        // the tunnel out to Route 4: daylight spilling in over the floor
+        items.push(
+          <group key={key} position={[x, 0, y]}>
+            <mesh position={[0, 0.012, 0.2]} rotation={[-Math.PI / 2, 0, 0]} material={glow("#fff6d0", 0.45)}>
+              <planeGeometry args={[1, 1.4]} />
+            </mesh>
+            <mesh position={[0, 0.7, -0.45]} material={glow("#fffbe8", 0.9)}>
+              <planeGeometry args={[0.8, 1.4]} />
+            </mesh>
+          </group>,
+        );
       else if (ch === "Z")
         items.push(
           <group key={key} position={[x, 0, y]}>
@@ -402,6 +414,110 @@ function CaveView({ map }: { map: MapId }) {
       </mesh>
       {items}
       <CaveItems map={map} />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------- pool arena
+// Marina's arena: tiled decks around deep pools, stepping stones, and currents drawn as
+// ripples racing the way they flow. A waterfall pours down the back wall.
+const DIR_ROT: Record<string, number> = { "^": 0, "<": Math.PI / 2, v: Math.PI, ">": -Math.PI / 2 };
+
+function CurrentTile({ x, y, ch }: { x: number; y: number; ch: string }) {
+  const ref = useRef<THREE.Group>(null);
+  const phase = ((x * 13 + y * 7) % 10) / 10;
+  useFrame(({ clock }) => {
+    const g = ref.current;
+    if (!g) return;
+    g.children.forEach((c, i) => {
+      const t = (clock.elapsedTime * 1.4 + phase + i / 3) % 1;
+      c.position.z = 0.45 - t * 0.9;
+      c.scale.setScalar(0.6 + Math.sin(t * Math.PI) * 0.4);
+    });
+  });
+  return (
+    <group position={[x, -0.11, y]} rotation={[0, DIR_ROT[ch], 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} material={glow("#3f9ad8", 0.85)}>
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+      <group ref={ref}>
+        {[0, 1, 2].map((i) => (
+          // a chevron pointing the way the water flows (-z is "ahead" before rotation)
+          <group key={i}>
+            <Bx p={[-0.12, 0.01, 0.05]} r={[0, 0.7, 0]} s={[0.3, 0.01, 0.06]} c="#e8f7ff" g shadow={false} />
+            <Bx p={[0.12, 0.01, 0.05]} r={[0, -0.7, 0]} s={[0.3, 0.01, 0.06]} c="#e8f7ff" g shadow={false} />
+          </group>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+function PoolView({ map }: { map: MapId }) {
+  const def = INTERIORS[map as Exclude<MapId, "overworld">];
+  const rows = def.rows;
+  const H = rows.length;
+  const W = rows[0].length;
+  const items: JSX.Element[] = [];
+  const doorX = rows[H - 1].indexOf("d");
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const ch = rows[y][x];
+      const key = `${x},${y}`;
+      if (ch === "#") {
+        const south = y === H - 1;
+        const h = south ? 0.25 : y === 0 ? 2.2 : 1.6;
+        items.push(<Bx key={key} p={[x, h / 2, y]} s={[1, h, 1]} c={y === 0 ? def.wall : "#e8f4f8"} />);
+        if (!south && y > 0 && y % 3 === 1) items.push(<Bx key={`t${key}`} p={[x + (x === 0 ? 0.51 : -0.51), 1.0, y]} s={[0.02, 0.3, 0.7]} c="#7cc4f0" shadow={false} />);
+      } else if (ch === "." || ch === "d") {
+        // deck tiles in a checker of pale blues, raised above the water
+        items.push(<Bx key={key} p={[x, -0.1, y]} s={[1, 0.2, 1]} c={ch === "d" ? "#7cc4f0" : (x + y) % 2 ? "#eaf5f9" : "#d4eaf2"} shadow={false} />);
+      } else if (ch === "n") {
+        items.push(
+          <group key={key} position={[x, 0, y]}>
+            <Cy p={[0, -0.1, 0]} s={[0.42, 0.2, 0.42]} c="#9aa4a8" />
+            <Cy p={[0, 0.005, 0]} s={[0.36, 0.01, 0.36]} c="#b4bec2" shadow={false} />
+          </group>,
+        );
+      } else if ("^v<>".includes(ch)) items.push(<CurrentTile key={key} x={x} y={y} ch={ch} />);
+    }
+  return (
+    <group>
+      {/* pool bottom and the water surface over everything that isn't deck */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(W - 1) / 2, -0.45, (H - 1) / 2]} receiveShadow>
+        <planeGeometry args={[W, H]} />
+        <meshLambertMaterial color="#2a7ab0" />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(W - 1) / 2, -0.13, (H - 1) / 2]} material={glow("#5ab4e8", 0.7)}>
+        <planeGeometry args={[W, H]} />
+      </mesh>
+      {items}
+      {/* a waterfall down the back wall behind the leader, pouring into a channel */}
+      <mesh position={[doorX, 1.1, 0.52]} material={glow("#bfe8ff", 0.85)}>
+        <planeGeometry args={[2.2, 2.2]} />
+      </mesh>
+      <PoolFall x={doorX} />
+      {/* aquamarine crest over the fall */}
+      <group position={[doorX, 2.05, 0.6]}>
+        <Sph p={[0, 0.05, 0]} s={[0.16, 0.2, 0.08]} c="#7cc4f0" />
+        <Cn p={[0, -0.16, 0]} s={[0.15, 0.2, 0.08]} r={[Math.PI, 0, 0]} c="#5aaede" />
+      </group>
+    </group>
+  );
+}
+
+function PoolFall({ x }: { x: number }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    ref.current?.children.forEach((c, i) => {
+      c.position.y = 2.2 - ((clock.elapsedTime * 1.5 + i * 0.137) % 1) * 2.2;
+    });
+  });
+  return (
+    <group ref={ref}>
+      {Array.from({ length: 9 }, (_, i) => (
+        <Bx key={i} p={[x - 1 + ((i * 0.41) % 1) * 2, 1, 0.55]} s={[0.05, 0.4, 0.02]} c="#ffffff" g shadow={false} />
+      ))}
     </group>
   );
 }
@@ -429,6 +545,7 @@ function Preview() {
 export function InteriorView({ map }: { map: MapId }) {
   const def = INTERIORS[map as Exclude<MapId, "overworld">];
   if (def.cave) return <CaveView map={map} />;
+  if (def.pool) return <PoolView map={map} />;
   const rows = def.rows;
   const H = rows.length;
   const W = rows[0].length;

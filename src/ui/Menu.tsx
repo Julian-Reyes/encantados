@@ -6,10 +6,11 @@ import { say, yesno } from "../game/dialog";
 import { sfx, refreshMusic } from "../game/audio";
 import { currentSpot, runScript } from "../world/runtime";
 import { DEX_ORDER, SPECIES } from "../data/species";
-import { ITEMS, type Item, type ItemId } from "../data/items";
+import { ITEMS, mtFits, type Item, type ItemId } from "../data/items";
 import { MOVES } from "../data/moves";
 import { TYPES } from "../data/types";
 import { calcStats, displayName, expForLevel, maxHp, type Mon } from "../game/mon";
+import { learnMove } from "../game/progression";
 import { HpBar, MonIcon, Portrait, StatusTag, TypeBadge } from "./common";
 import { useKeys, moveCursor } from "./useKeys";
 import { BADGES, BadgeIcon } from "./Badges";
@@ -326,10 +327,11 @@ function Summary({ mons, index, onIndex, onClose }: { mons: Mon[]; index: number
 
 // ---------------------------------------------------------------- bag
 type Pocket = Item["pocket"];
-const POCKETS: Pocket[] = ["items", "amulets", "key"];
+const POCKETS: Pocket[] = ["items", "amulets", "mts", "key"];
 const POCKET_NAMES: Record<Pocket, L> = {
   items: { en: "ITEMS", pt: "ITENS" },
   amulets: { en: "AMULETS", pt: "AMULETOS" },
+  mts: { en: "MTs", pt: "MTs" },
   key: { en: "KEY ITEMS", pt: "ITENS-CHAVE" },
 };
 
@@ -353,6 +355,19 @@ export function BagScreen() {
     void runScript(async () => {
       const m = G().party[i];
       const it = ITEMS[id];
+      if (it.mt) {
+        // MTs are never used up.
+        const mv = tr(MOVES[it.mt.move].name);
+        if (!mtFits(id, SPECIES[m.species])) await say(tr({ en: "{n} can't learn {m}.", pt: "{n} não pode aprender {m}." }, { n: displayName(m), m: mv }));
+        else if (m.moves.some((k) => k.id === it.mt!.move)) await say(tr({ en: "{n} already knows {m}.", pt: "{n} já sabe {m}." }, { n: displayName(m), m: mv }));
+        else {
+          await say(tr({ en: "{player} booted up the MT. It contains {m}!", pt: "{player} ligou o MT. Ele contém {m}!" }, { m: mv }));
+          await learnMove(m, it.mt.move);
+          touch();
+          setTarget(null);
+        }
+        return;
+      }
       const max = maxHp(m);
       let msg: L | null = null;
       if (it.revive) {
@@ -476,7 +491,7 @@ export function BagScreen() {
                 {displayName(m)} <StatusTag mon={m} />
               </span>
               <small>
-                {m.hp}/{maxHp(m)}
+                {ITEMS[target].mt ? tr(mtFits(target, SPECIES[m.species]) ? { en: "ABLE", pt: "PODE" } : { en: "NOT ABLE", pt: "NÃO PODE" }) : `${m.hp}/${maxHp(m)}`}
               </small>
             </div>
           ))}

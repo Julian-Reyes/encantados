@@ -8,14 +8,15 @@ import { startBattle, runEvolutions } from "../game/flow";
 import type { BattleResult } from "../game/battle";
 import { SPECIES, STARTERS, type SpeciesId } from "../data/species";
 import { ITEMS } from "../data/items";
+import { MOVES } from "../data/moves";
 import { TYPES, type L } from "../data/types";
 import {
-  NPCS, caveLink, encounterTable, isCave, tileAt, type Building, type NpcDef,
+  NPCS, caveLink, currentAt, encounterTable, fishTable, isCave, isPool, tileAt, type Building, type EncounterSlot, type NpcDef,
 } from "./maps";
 import type { ItemId } from "../data/items";
 import {
   rt, actor, blocked, dirVec, exclaim, exteriorExit, face, faceToward, fadeIn, fadeOut, interiorEntry, itemAt,
-  loadMap, mapMusic, npcAt, npcDefsFor, refreshNpcVisibility, runScript, signAt, walk, warp, wait,
+  loadMap, mapMusic, npcAt, npcDefsFor, refreshNpcVisibility, runScript, signAt, slide, walk, warp, wait,
 } from "./runtime";
 
 const hasStarter = () => G().party.length > 0 || flag("hasStarter");
@@ -78,12 +79,29 @@ export function onStepEnd(): boolean {
   const map = rt.map;
   if (map === "overworld") music(mapMusic(map, p.y));
 
+  // Pool currents keep carrying you until you reach still ground.
+  const current = currentAt(map, p.x, p.y);
+  if (current) {
+    p.facing = current;
+    if (slide(current)) return true;
+  }
+
   if (map === "overworld" && !hasStarter() && p.y === 57 && p.x >= 14 && p.x <= 17) {
     void runScript(profStop);
     return true;
   }
   if (map === "overworld" && hasStarter() && !flag("rivalBeaten") && p.y === 36 && (p.x === 15 || p.x === 16)) {
     void runScript(rivalRoute);
+    return true;
+  }
+  if (map === "overworld" && !flag("rivalCipoBeaten") && p.y === -117 && (p.x === 15 || p.x === 16)) {
+    void runScript(rivalCipo);
+    return true;
+  }
+  if (isCave(map) && tileAt(map, p.x, p.y) === "D") {
+    // The Lapinha's north exit comes out of the U mouth on Route 4.
+    const ext = exteriorExit(map);
+    if (ext) void runScript(() => warp("overworld", ext[0], ext[1], "down"));
     return true;
   }
   const link = caveLink(map, p.x, p.y);
@@ -103,7 +121,7 @@ export function onStepEnd(): boolean {
   const tile = tileAt(map, p.x, p.y);
   const rate = map === "overworld" ? (tile === '"' ? 0.1 : 0) : isCave(map) && tile === "." ? 0.07 : 0;
   if (rate && G().party.some((m) => m.hp > 0) && Math.random() < rate) {
-    void runScript(wildEncounter);
+    void runScript(() => wildEncounter());
     return true;
   }
   return false;
@@ -131,8 +149,7 @@ async function afterBattle(r: BattleResult) {
   music(mapMusic(rt.map, rt.player.y));
 }
 
-async function wildEncounter() {
-  const table = encounterTable(rt.map, rt.player.y);
+async function wildEncounter(table: EncounterSlot[] = encounterTable(rt.map, rt.player.y)) {
   const total = table.reduce((s, e) => s + e.weight, 0);
   let roll = Math.random() * total;
   let slot = table[0];
@@ -161,7 +178,11 @@ async function trainerBattle(def: NpcDef, spotted: boolean) {
   faceToward(def.id, p.x, p.y);
   faceToward("player", a.x, a.y);
   await speak(t.name, t.intro);
-  const team = t.team.map(([s, l]) => createMon(s, l));
+  const team = t.team.map(([s, l, o]) => {
+    const m = createMon(s, l, { perfect: o?.perfect });
+    if (o?.moves) m.moves = o.moves.map((id) => ({ id, pp: MOVES[id].pp }));
+    return m;
+  });
   const r = await startBattle({ kind: "trainer", enemy: team, trainer: { id: def.id, name: t.name, reward: t.reward, win: t.win }, music: t.music });
   if (r.outcome === "win") setFlag("beat_" + def.id);
   await afterBattle(r);
@@ -170,6 +191,7 @@ async function trainerBattle(def: NpcDef, spotted: boolean) {
 
 const BADGES: Record<string, L> = {
   badgeTopaz: { en: "Topaz Badge", pt: "Insígnia Topázio" },
+  badgeAquamarine: { en: "Aquamarine Badge", pt: "Insígnia Água-Marinha" },
 };
 
 async function awardBadge(def: NpcDef, badge: string) {
@@ -179,7 +201,23 @@ async function awardBadge(def: NpcDef, badge: string) {
   refreshNpcVisibility();
   void jingle("caught");
   await say(tr({ en: "{player} received the {b}!", pt: "{player} recebeu a {b}!" }, { b: tr(BADGES[badge]) }));
+  if (t.mt) await giveMt(def);
   await speak(t.name, t.after);
+}
+
+/** A leader's MT, handed over once (the flag lets older saves collect it later by talking). */
+async function giveMt(def: NpcDef) {
+  const t = def.trainer!;
+  const id = t.mt!;
+  if (flag("mt_" + def.id)) return;
+  await speak(t.name, { en: "And take this MT too. It's my favorite move!", pt: "E leve este MT também. É o meu golpe favorito!" });
+  addItem(id);
+  setFlag("mt_" + def.id);
+  void jingle("item");
+  await say(tr({ en: "{player} received {i}!", pt: "{player} recebeu {i}!" }, { i: tr(ITEMS[id].name) }));
+  await speak(t.name,
+    tr({ en: "An MT teaches {m} to any creature that can learn it, as often as you like. It never runs out!", pt: "Um MT ensina {m} a qualquer criatura que possa aprender, quantas vezes quiser. Ele nunca acaba!" }, { m: tr(MOVES[ITEMS[id].mt!.move].name) }),
+  );
 }
 
 export async function whiteout() {
@@ -346,6 +384,49 @@ async function rivalRoute() {
   refreshNpcVisibility();
 }
 
+// At the Serra do Cipó's north exit, just before the unfinished bridge.
+async function rivalCipo() {
+  const p = rt.player;
+  await speak(RIVAL, { en: "Hey! {player}!", pt: "Ei! {player}!" });
+  const r = actor("rival2");
+  r.x = r.fromX = p.x;
+  r.y = r.fromY = -120;
+  r.facing = "down";
+  r.visible = true;
+  setFlag("rivalCipoShow");
+  face("player", "up");
+  await walk("rival2", "down", -118 - -120, 5);
+  const starter = rivalStarter();
+  const evolved = SPECIES[starter].evolves?.to ?? starter;
+  await speak(RIVAL,
+    { en: "So you made it through the Lapinha too. Did you see those Garimpo creeps? I sent them running!", pt: "Então você também passou pela Lapinha. Viu aqueles capangas do Garimpo? Botei todos para correr!" },
+    { en: "The bridge isn't even finished, so you're not getting past me anyway. Let's battle!", pt: "A ponte nem está pronta, então você não passa de mim mesmo. Vamos batalhar!" },
+  );
+  const team = [createMon("gavionte", 17), createMon("corujita", 16), createMon("ratico", 15), createMon(evolved, 18)];
+  const res = await startBattle({
+    kind: "trainer",
+    enemy: team,
+    trainer: { id: "rival2", name: { en: "Rival {rival}", pt: "Rival {rival}" }, reward: 720, win: { en: "Again?! Ugh, my team was still wet from the waterfall!", pt: "De novo?! Ah, minha equipe ainda estava molhada da cachoeira!" } },
+    music: "rival",
+  });
+  if (res.outcome === "win") {
+    setFlag("rivalCipoBeaten");
+    await afterBattle(res);
+    await speak(RIVAL,
+      { en: "Fine, you win this one. I already have Marina's badge, by the way.", pt: "Tá, essa você ganhou. Aliás, eu já tenho a insígnia da Marina." },
+      { en: "Grandpa says there's a man across the river who knows everything about creatures. I'll meet him first. Smell ya later!", pt: "O vô disse que do outro lado do rio mora um homem que sabe tudo sobre criaturas. Eu vou conhecer ele primeiro. Até mais!" },
+    );
+    // Step around the player and head back into town.
+    await walk("rival2", p.x === 15 ? "right" : "left", 1, 6);
+    await walk("rival2", "down", 6, 6);
+  } else {
+    await speak(RIVAL, { en: "Ha! Go dry off, {player}!", pt: "Rá! Vai se secar, {player}!" });
+    await afterBattle(res);
+  }
+  setFlag("rivalCipoShow", false);
+  refreshNpcVisibility();
+}
+
 // Two fossils on B2F of the Gruta da Lapinha: beat the scientist, then take one; he keeps the other.
 const FOSSILS: Record<number, { item: ItemId; what: L }> = {
   2: { item: "fossilgarra", what: { en: "the Claw Fossil: the claw of a giant ground sloth", pt: "o Fóssil de Garra: a garra de uma preguiça-gigante" } },
@@ -379,10 +460,32 @@ async function fossil(x: number) {
   );
 }
 
+// The Vara de Pescar: face any river or pond outdoors and press A.
+async function fish() {
+  if (!(await yesno(tr({ en: "The water is calm and clear. Fish here?", pt: "A água está calma e cristalina. Pescar aqui?" })))) return;
+  await say({ en: "{player} cast the line...", pt: "{player} lançou a linha..." });
+  sfx("throw");
+  await wait(900 + Math.random() * 900);
+  if (Math.random() >= 0.7) {
+    await say({ en: "Not even a nibble...", pt: "Nem uma beliscada..." });
+    return;
+  }
+  await exclaim("player");
+  await say({ en: "Oh! A bite!", pt: "Opa! Fisgou!" });
+  await wildEncounter(fishTable(rt.player.y));
+}
+
+const POOL_THINGS: Record<string, L> = {
+  w: { en: "The pool is deep and chilly. The water rushes in from the waterfall on the back wall.", pt: "A piscina é funda e gelada. A água entra pela cachoeira na parede do fundo." },
+  current: { en: "A strong current is flowing this way. It would carry you right along!", pt: "Uma correnteza forte passa por aqui. Ela levaria você junto!" },
+  n: { en: "A flat stepping stone, slippery with spray.", pt: "Uma pedra chata, escorregadia com os respingos." },
+};
+
 const CAVE_THINGS: Record<string, L> = {
   o: { en: "A limestone boulder. Water has carved grooves into it over thousands of years.", pt: "Uma rocha de calcário. A água cavou sulcos nela ao longo de milhares de anos." },
   "*": { en: "Calcite crystals glitter in the lamplight.", pt: "Cristais de calcita brilham à luz do lampião." },
   X: { en: "Fallen rocks block the tunnel north.", pt: "Pedras caídas bloqueiam o túnel para o norte." },
+  D: { en: "Daylight! The tunnel leads out to Route 4.", pt: "Luz do dia! O túnel sai na Rota 4." },
   H: { en: "A hole leads down into the dark.", pt: "Um buraco leva para baixo, no escuro." },
   U: { en: "A ladder leads back up.", pt: "Uma escada leva de volta para cima." },
 };
@@ -465,6 +568,24 @@ const NPC_SCRIPTS: Record<string, (def: NpcDef) => Promise<void>> = {
     await say(tr({ en: "Welcome to the Cidade Ipê Shop! We carry the good stuff.", pt: "Bem-vindo à Loja de Cidade Ipê! Aqui tem do bom e do melhor." }));
     G().set({ screen: "shop", shopKind: "city" });
   },
+  async clerkCipo() {
+    await say(tr({ en: "Welcome to the Serra do Cipó Shop! Stocking up for the bridge?", pt: "Bem-vindo à Loja da Serra do Cipó! Se abastecendo para a ponte?" }));
+    G().set({ screen: "shop", shopKind: "cipo" });
+  },
+  async fisherman() {
+    const FISHER: L = { en: "FISHERMAN", pt: "PESCADOR" };
+    if (!flag("gotRod")) {
+      await speak(FISHER,
+        { en: "Shh! You'll scare the piabas! ...Ah, never mind, they're not biting today anyway.", pt: "Psiu! Vai espantar as piabas! ...Ah, deixa, hoje elas não estão mordendo mesmo." },
+        { en: "You look like someone who'd enjoy fishing. Here, I've got a spare rod!", pt: "Você tem cara de quem gosta de pescar. Tome, tenho uma vara sobrando!" },
+      );
+      addItem("vara");
+      setFlag("gotRod");
+      void jingle("item");
+      await say(tr({ en: "{player} received the Fishing Rod!", pt: "{player} recebeu a Vara de Pescar!" }));
+    }
+    await speak(FISHER, { en: "Face any water and press A to cast. Piabinha look like nothing, but raise one up and you'll get a real surprise!", pt: "Fique de frente para qualquer água e aperte A para lançar. Piabinha parece que não é nada, mas crie uma e você vai ter uma baita surpresa!" });
+  },
   async martGuy() {
     if (!flag("martGuyGift")) {
       await say(
@@ -505,8 +626,9 @@ async function talk(id: string) {
   if (!def) return;
   faceToward(id, rt.player.x, rt.player.y);
   if (def.trainer) {
-    if (flag("beat_" + id)) await speak(def.trainer.name, def.trainer.after);
-    else await trainerBattle(def, false);
+    if (!flag("beat_" + id)) await trainerBattle(def, false);
+    else if (def.trainer.mt && !flag("mt_" + id)) await giveMt(def);
+    else await speak(def.trainer.name, def.trainer.after);
     return;
   }
   if (def.script && NPC_SCRIPTS[def.script]) await NPC_SCRIPTS[def.script](def);
@@ -546,6 +668,12 @@ export function onInteract(x: number, y: number) {
     });
   }
   const t = tileAt(rt.map, x, y);
+  if (rt.map === "overworld" && t === "~" && G().bag.vara && G().party.some((m) => m.hp > 0)) return void runScript(fish);
+  if (isPool(rt.map)) {
+    const c = currentAt(rt.map, x, y) ? POOL_THINGS.current : POOL_THINGS[t];
+    if (c) return void runScript(() => say(c));
+    return;
+  }
   if (isCave(rt.map)) {
     if (t === "Z") return void runScript(() => fossil(x));
     const c = CAVE_THINGS[t];
@@ -575,8 +703,8 @@ export function onInteract(x: number, y: number) {
 export function onBuildingDoor(b: Building) {
   void runScript(async () => {
     if (b.interior) {
-      const [ix, iy] = interiorEntry(b.interior);
-      await warp(b.interior, ix, iy, "up");
+      const [ix, iy, facing] = b.entry ?? [...interiorEntry(b.interior), "up" as const];
+      await warp(b.interior, ix, iy, facing);
       return;
     }
     sfx("bump");

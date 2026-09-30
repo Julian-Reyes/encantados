@@ -15,7 +15,7 @@ The plan for the full game: 8 gyms, a villain team, the Elite Four and a Champio
 | # | Kanto beat | Stage | Gym / event | Levels |
 |---|---|---|---|---|
 | 1 ✓ | Pallet → Viridian → Pewter | **MG**: Vila Pequi, Route 1, Cidade Ipê, Route 2 | **Topázio** (Rock), Topaz Badge | 12/14 |
-| 2 ◐ | Mt. Moon → Cerulean | **MG**: Route 3 ✓ → **Gruta da Lapinha** (fossils) ✓ → **Serra do Cipó** (waterfalls) | **Marina** (Water), Aquamarine Badge | 18/21 |
+| 2 ✓ | Mt. Moon → Cerulean | **MG**: Route 3 → **Gruta da Lapinha** (fossils) → Route 4 → **Serra do Cipó** (waterfalls) | **Marina** (Water), Aquamarine Badge | 18/21 |
 | 3 | Nugget Bridge, Bill → Vermilion, S.S. Anne | Ponte do Cipó, Seu Bento's cabin → Caminho Novo → **Rio de Janeiro (RJ)**, the port, with the cruise ship *Navio Guanabara* | **Turmalina** (Electric; tourmaline is piezo-electric), Tourmaline Badge | 21/24 |
 | 4 | Rock Tunnel → Lavender | **Túnel da Serra do Mar** (dark, needs Flash) → **Paraty (RJ)**, a colonial town with a haunted church bell tower. No gym | — | ~25 |
 | 5 | Celadon | Serra Verde train → **Curitiba (PR)**: the Jardim Botânico greenhouse is the gym, plus a dept. store and a Fliperama hiding the villains' base. The **Itaipu** dam nearby is the Power Plant | **Esmeralda** (Grass), Emerald Badge | 24–29 |
@@ -45,7 +45,7 @@ Already done: the lab battle and Route 1. Still to come, following Kanto:
 
 | Where | Kanto beat | Levels (approx.) |
 |---|---|---|
-| Serra do Cipó, before the bridge | Cerulean | 18 |
+| Serra do Cipó, before the bridge ✓ | Cerulean | 18 |
 | Aboard the Navio Guanabara | S.S. Anne | 20 |
 | Paraty bell tower | Pokémon Tower | 25 |
 | Amulet Co., São Paulo | Silph Co. | 40 |
@@ -65,21 +65,23 @@ Field moves work like HMs (in Portuguese, *MO*). You teach them to a creature, a
 | **Voar** | Fly | A gift on a Curitiba route | Quartz |
 
 - **Key items:** Bilhete do Navio (the S.S. Ticket), Lente Espectral, Viola caipira, Amuleto Mestre, and the key to the prison ruins.
-- **MTs:** every gym leader gives one (the TM role).
+- **MTs:** every gym leader gives one (the TM role). Done: the MT pocket, reusable MTs, MT01 Rock Tomb (Topázio) and MT02 Bubble Jet (Marina). An MT fits creatures of its listed types plus an `also` list.
+- **Fishing:** the Vara de Pescar from the Serra do Cipó fisherman works on any overworld water; `fishTable(y)` picks what bites. Better rods can come later.
 - **Evolution stones are Brazilian gems,** sold in the Curitiba dept. store: Opala de Fogo, Água-marinha, Turmalina, Esmeralda and Pedra da Lua.
 
 ## Types and species
 
 **Types.** Add the 7 remaining Gen-1 types: **Ice, Fighting, Poison, Ground, Psychic, Ghost** and **Dragon**. With the existing Dark type that makes 16. The chart in `src/data/types.ts` gets the Gen-2 values. Poison and Ground are done (0× immunities are handled in battle); Ice, Fighting, Psychic, Ghost and Dragon are left.
 
-**Species.** The target is about 75 in total, up from 18. They're introduced by region so each area feels local:
+**Species.** The target is about 75 in total; there are 29 so far. They're introduced by region so each area feels local:
 
 - **Minas caves:** Zubat → **Morceguinho** → **Morcegão** (Poison/Flying) ✓. Clefairy → **Luazinha** (Normal) ✓, which will evolve with a Pedra da Lua once evolution by item exists. The Lapinha fossils are a giant ground sloth (Rock/Ground) and a saber-tooth cat (Rock/Dark), both found at Lagoa Santa. The **Claw Fossil** and **Fang Fossil** key items are in; their species come with the Noronha fossil lab.
-- **Rivers:** Magikarp → Gyarados becomes **Piabinha → Pirarucão**. Voltorb becomes **Poraquê**, the electric eel.
+- **Rivers:** Magikarp → Gyarados becomes **Piabinha → Pirarucão** (Water → Water/Dark) ✓, caught by fishing. The river otters **Lontrinha → Ariranha** (Water) ✓. Voltorb becomes **Poraquê**, the electric eel.
+- **Serras:** Ekans → **Jararaca → Jararacuçu** (Poison) ✓ and Oddish → **Canelinha → Canelão** (Grass, the canela-de-ema) ✓ on Route 4.
 - **Rio and the coast:** Diglett → **Tatuzinho** (the three-banded armadillo, Ground); Mankey → **Macaco-prego** (the capuchin, Fighting); plus gulls.
 - **Paraná:** Pineco → **Pinhãozinho** (the araucária pine cone). Eevee → **Saguizinho**, a gift that evolves with the gems.
 - **Pantanal:** Kangaskhan → **Tamanduá-bandeira** (the giant anteater really does carry its baby on its back); Growlithe → **Guarazinho** (the maned wolf); plus a capybara, a caiman, a jaguar and a hyacinth macaw.
-- **Found in several places:** Snorlax → **Preguiçudo** (the sloth); Ekans → **Jararaca**; the Gastly line → **Visagem** (Ghost/Poison); Hitmonlee/Hitmonchan → **Ginga / Rasteira** (capoeira).
+- **Found in several places:** Snorlax → **Preguiçudo** (the sloth); the Gastly line → **Visagem** (Ghost/Poison); Hitmonlee/Hitmonchan → **Ginga / Rasteira** (capoeira).
 - **Abrolhos and Noronha:** a dolphin, a sea turtle, and a humpback whale in Lapras's role.
 - **Amazon (endgame):** the Dratini line → **Minhoquinha → Minhocão → Boiúna** (Dragon).
 
@@ -110,7 +112,7 @@ One member per region, with levels on Kanto's curve (53–65):
 
 These are needed by every stage.
 
-1. **Multiple outdoor maps.** Today the whole outdoors is one 32-tile-wide strip (`OVERWORLD`, `OW_Y0`, and the `"overworld"` map id, used in about 58 places across 8 files).
+1. **Multiple outdoor maps.** Today the whole outdoors is one 32-tile-wide strip, now reaching Serra do Cipó at y -125 (`OW_Y0`). Do this before stage 3 leaves Minas (`OVERWORLD`, `OW_Y0`, and the `"overworld"` map id, used in about 58 places across 8 files).
    - Generalise it to named outdoor regions joined by edges or by scripted travel (ship, train, highway).
    - Keep `"overworld"` as the id for the current region so existing saves stay valid.
    - Each region should be able to have its own look: palette, water, beach sand, araucárias, cerrado.
@@ -126,26 +128,19 @@ These are needed by every stage.
    - warp-tile puzzles;
    - gym locks and badge gates, reusing the badge-flag check the Ipê `worker` NPC already uses in `maps.ts`.
 
+   Done: pool currents (`^ v < >` tiles in `pool: true` interiors, see `currentAt` and `slide`), MTs and fishing.
+
    The badge case already exists (`BADGE_FLAGS` in `src/ui/Menu.tsx`).
 
-## Stage 2 in detail (in progress, still in Minas)
+## Stage 2 (done)
 
-**Route 3** ✓ continues north from where Route 2 ends (y -72 to -37), with a Healing Center at the cave mouth.
-- Trainers: Bug Catcher Juca, Lass Lia and Youngster Nando, levels 12–14.
-- Wild: Morceguinho, Pardalito, Chispito, Lagartix and Borbolux, levels 11–14.
+- **Route 3** climbs from Route 2 to the **Gruta da Lapinha** (1F, B1F, B2F), with Garimpo grunts, Scientist Otávio and the fossil choice.
+- The B1F north tunnel (`D`) comes out of a second cave mouth (`U`) onto **Route 4** (y -91 to -73): Picnicker Nina, a Garimpo grunt, and wild Jararaca, Canelinha, Pardalito, Ratiço and Lagartix at 13–16.
+- **Serra do Cipó** (y -125 to -92): the Cachoeira da Farofa waterfall and pool, a Healing Center, a shop, the fisherman with the Vara de Pescar, and townsfolk hinting at stage 3.
+- **Marina's arena** is a pool with stepping stones and currents. Swimmers Duda and Téo; Marina has Piabinha 18, Lontrinha 19 and Pirarucão 21, and gives the Aquamarine Badge and MT02.
+- The rival waits at the north exit (Gavionte 17, Corujita 16, Ratiço 15, evolved starter 18). North of him, the unfinished **Ponte do Cipó** and a worker (`worker4`) block the way until stage 3.
 
-**Gruta da Lapinha** ✓ (Mt. Moon): 1F, B1F in two halves, and B2F.
-- Wild: Morceguinho, Pedrudo and Luazinha, levels 10–14.
-- Three Garimpo Sombrio grunts (levels 13–16), Caver Beto, and Scientist Otávio in the Super Nerd's role.
-- On B2F you choose the Claw or Fang Fossil after beating Otávio.
-- The north exit on B1F is blocked by a rockslide, with a worker in front of it (`worker3`). Remove both when Serra do Cipó is built; the exit then leads there.
-
-**Serra do Cipó** (Cerulean) has a Healing Center, a shop, and a waterfall. The rival battles you at the north exit.
-- **Water gym:** the puzzle is stepping stones and currents across waterfall pools.
-- Trainers: two swimmers, levels 16–19.
-- Leader **Marina**: Piabinha at 18 and a Pirarucão-line creature at 21. She gives the Aquamarine Badge and her MT.
-
-**New content for this stage:** 5–7 species, 3–5 moves, and an Aquamarine badge flag added to `BADGE_FLAGS`.
+**Next (stage 3):** finish the bridge (remove `worker4`), add the Ponte do Cipó trainers and the Garimpo recruiter, Seu Bento's cabin, and the robbed house.
 
 ## Polish backlog
 

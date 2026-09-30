@@ -1,6 +1,6 @@
 # Encantados
 
-A browser creature-collecting RPG built with React, TypeScript, React Three Fiber and procedural low-poly models. Explore Vila Pequi, Cidade Ipê, Routes 1–3 and the Gruta da Lapinha caves, choose a starter, battle trainers, and fill the bilingual Almanaque.
+A browser creature-collecting RPG built with React, TypeScript, React Three Fiber and procedural low-poly models. Explore Vila Pequi, Cidade Ipê, Routes 1–4, the Gruta da Lapinha caves and Serra do Cipó, choose a starter, battle trainers, and fill the bilingual Almanaque.
 
 ```sh
 npm install
@@ -27,17 +27,19 @@ Leave your house and head north to meet Professor Jatobá. Choose an amulet at t
 
 ## Included
 
-- Three starters, eight other base species, and ten evolutions; 21 Almanaque entries.
+- Three starters, twelve other base species, and fourteen evolutions; 29 Almanaque entries.
 - Turn-based battles, elemental effectiveness, statuses, catching, nicknames, experience, move learning and cancellable evolution.
-- A rival, route trainers, the Garimpo Sombrio grunts, Arena Leader Topázio, shops, healing items, storage, signs, dialogue and pickups.
+- A rival, route trainers, the Garimpo Sombrio grunts, Arena Leaders Topázio and Marina, shops, healing items, storage, signs, dialogue and pickups.
+- MTs that teach a move from the Bag (each leader gives one), and a fishing rod for rivers and ponds.
+- Marina's pool arena, where currents carry you across the water.
 - A three-floor cave with ladders, cave encounters and a fossil to choose.
 - English/Portuguese options, synthesized music and effects, local saves and mobile controls.
 - Instanced terrain/vegetation, a 1.5 pixel-ratio cap and one 1024-pixel shadow map.
 
-Route 3 climbs from Route 2 to the Gruta da Lapinha. The tunnel out of the cave to Serra do Cipó is still blocked by a rockslide. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan for the rest of the game.
+Route 3 climbs from Route 2 to the Gruta da Lapinha. The cave's north tunnel opens onto Route 4 and Serra do Cipó, where the bridge north is still under construction. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan for the rest of the game.
 
 ## Validation
 
-Automated checks cover dialogue sequencing, battle entry, exhausted parties, trainer rewards, catching into storage, leveling, save/load, type immunities, species data, and map data (everyone stands somewhere walkable, every cave ladder is paired and the whole cave can be reached). Browser checks use the production HTML in headless Chrome; this does not establish performance on a 2017 MacBook Pro or audio quality on physical speakers.
+Automated checks cover dialogue sequencing, battle entry, exhausted parties, trainer rewards, catching into storage, leveling, save/load, type immunities, species data, and map data (everyone stands somewhere walkable, every cave ladder is paired and the whole cave can be reached, Route 4 and Serra do Cipó can be reached, and no current in Marina's arena can trap you), MT compatibility, and saves made before the map grew north. Browser checks use the production HTML in headless Chrome; this does not establish performance on a 2017 MacBook Pro or audio quality on physical speakers.
 
 Pixelify Sans and Press Start 2P are bundled under the SIL Open Font License. Notices are in `src/assets/fonts` and embedded in the generated HTML.

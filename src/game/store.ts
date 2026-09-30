@@ -8,7 +8,7 @@ export type Lang = "en" | "pt";
 export type Dir = "up" | "down" | "left" | "right";
 export type MapId =
   | "overworld" | "home" | "rivalhouse" | "lab" | "center1" | "mart1" | "center2" | "mart2" | "arena1"
-  | "center3" | "lapinha1" | "lapinha2" | "lapinha3";
+  | "center3" | "lapinha1" | "lapinha2" | "lapinha3" | "center4" | "mart3" | "arena2";
 
 export interface Spot {
   map: MapId;
@@ -49,7 +49,7 @@ export interface DialogState {
 export interface GameState extends SaveData {
   mode: "title" | "intro" | "world" | "battle" | "evolve";
   screen: Screen;
-  shopKind: "town" | "city";
+  shopKind: "town" | "city" | "cipo";
   dialog: DialogState | null;
   fade: boolean;
   wipe: boolean;
